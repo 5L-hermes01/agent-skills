@@ -1,7 +1,7 @@
 ---
 name: x-digest
 description: Fetch and summarize X/Twitter list feeds into a digest format. Uses the xapi.py wrapper for OAuth2-authenticated API calls.
-version: 1.0.0
+version: 2.0.0
 author: Hermes Agent
 metadata:
   hermes:
@@ -31,6 +31,12 @@ python3 /opt/data/scripts/xapi.py search "AI agents" --max 10
 
 # JSON output for programmatic use
 python3 /opt/data/scripts/xapi.py list-tweets 1585430245762441216 --max 20 --json
+
+# Links-only output (for appending to digests)
+python3 /opt/data/scripts/xapi.py list-tweets 1585430245762441216 --max 20 --links-only
+
+# Validate a digest for broken URLs
+python3 /opt/data/scripts/xapi.py digest-validate /path/to/digest.txt
 ```
 
 ## Wrapper API
@@ -39,34 +45,99 @@ python3 /opt/data/scripts/xapi.py list-tweets 1585430245762441216 --max 20 --jso
 
 | Command | Description |
 |---------|-------------|
-| `list-tweets LIST_ID [--max N] [--json]` | Tweets from an X list |
-| `search "query" [--max N] [--json]` | Search recent tweets |
-| `bookmarks [--max N] [--json]` | User bookmarks |
+| `list-tweets LIST_ID [--max N] [--json] [--links-only]` | Tweets from an X list |
+| `search "query" [--max N] [--json] [--links-only]` | Search recent tweets |
+| `bookmarks [--max N] [--json] [--links-only]` | User bookmarks |
 | `user USERNAME` | Look up user by handle |
 | `user-id USER_ID` | Look up user by ID |
 | `timeline USER_ID [--max N]` | User timeline |
+| `digest-validate FILE` | Validate URLs in a digest file (exit 0=pass, 1=fail) |
+
+## Quick Start
+
+```bash
+# Fetch latest from AI High Signal list (comprehensive)
+python3 /opt/data/scripts/xapi.py list-tweets 1585430245762441216 --max 50
+
+# Fetch ALL tweets from the list (multiple pages)
+python3 /opt/data/scripts/xapi.py list-tweets 1585430245762441216 --max 100 --all
+
+# Fetch bookmarks
+python3 /opt/data/scripts/xapi.py bookmarks --max 10
+
+# Search
+python3 /opt/data/scripts/xapi.py search "AI agents" --max 10
+
+# JSON output for programmatic use
+python3 /opt/data/scripts/xapi.py list-tweets 1585430245762441216 --max 50 --json
+
+# Links-only output (for appending to digests)
+python3 /opt/data/scripts/xapi.py list-tweets 1585430245762441216 --max 50 --links-only
+```
 
 ## Known Lists
 
-| Name | List ID |
-|------|---------|
-| AI High Signal | 1585430245762441216 |
-| Concentrate | 207282755 |
-| High-Level Work Related | 204414139 |
+| Name | List ID | Recommended Max |
+|------|---------|-----------------|
+| AI High Signal | 1585430245762441216 | 50 (100 with --all) |
+| Concentrate | 207282755 | 50 (100 with --all) |
+| High-Level Work Related | 204414139 | 50 (100 with --all) |
 
-## Digest Workflow
+**Note:** For comprehensive digests, use `--max 100`. If timeout issues occur (common in headless environments), reduce to `--max 50-60` for reliable execution.
 
-1. Fetch tweets from a list using `list-tweets --json --max 40`
-2. Read ALL tweet content — skip pure RTs unless they amplify something notable
-3. Group by THEME, not by engagement. Common themes:
-   - Models & Benchmarks (new models, evals, leaderboards)
-   - Developer Tools & Code Agents (IDE, workflows, agent tooling)
-   - ML Research (papers, loss functions, architectures, training)
-   - Infrastructure & Compute (chips, datacenters, scaling)
-   - Community & Events (hackathons, launches, meetups)
-   - Hot Takes & Discourse (opinions, debates, controversy)
-4. Write a short paragraph per theme summarizing what's discussed and why it matters. Mention author handles.
-5. At the end, add a "Links" section with raw tweet URLs grouped by theme — one per line, no descriptions. User clicks through to read originals.
+## Digest Workflow (hardened + fallback for API issues)
+
+### Step 0: Pre-flight — refresh token & check cache
+\n\nAlways refresh the OAuth2 token before fetching tweets. Token expires every 2 hours.\n\nIf refresh fails (network/invalid tokens), fall back to locally cached recent tweets or mark task as requiring manual auth. Do NOT proceed with stale/missing data if freshness is required.\n\nAdditionally, check if the tweets are already cached on disk. If a fresh cache exists (less than 30 days old), use it instead of making an API call to reduce costs.
+
+### Step 1: Fetch tweets (full + links-only)
+
+```bash
+# Full output for the LLM to read
+python3 /opt/data/scripts/xapi.py list-tweets 1585430245762441216 --max 50 > /tmp/digest_tweets.txt
+
+# Links-only output — NEVER let the LLM touch this
+python3 /opt/data/scripts/xapi.py list-tweets 1585430245762441216 --max 50 --links-only > /tmp/digest_links.txt
+```
+
+If API returns 401/403, log the auth error and skip automated posting. Notify operator to refresh credentials.
+
+### Step 2: Write thematic summary
+
+- Read ALL tweet content from `/tmp/digest_tweets.txt` — skip pure RTs unless they amplify something notable
+- Group by THEME, not by engagement. Common themes:
+  - Models & Benchmarks (new models, evals, leaderboards)
+  - Developer Tools & Code Agents (IDE, workflows, agent tooling)
+  - ML Research (papers, loss functions, architectures, training)
+  - Infrastructure & Compute (chips, datacenters, scaling)
+  - Community & Events (hackathons, launches, meetups)
+  - Hot Takes & Discourse (opinions, debates, controversy)
+- Write a short paragraph per theme summarizing what's discussed and why it matters. Mention author handles.
+
+### Step 3: Append programmatic links section
+
+**CRITICAL: The Links section must be generated by Python, NOT by the LLM.**
+
+After writing the prose, append the contents of `/tmp/digest_links.txt` verbatim as the Links section. Do NOT rewrite, reorder, or reformat these URLs. The `--links-only` output is authoritative and guaranteed correct.
+
+### Step 4: Validate before posting
+
+```bash
+# Write your full digest to a temp file, then validate
+python3 /opt/data/scripts/xapi.py digest-validate /tmp/digest_output.txt
+```
+
+If validation fails (exit code 1), fix the broken URLs before posting. If validation passes, post the digest.
+
+### Step 5: Log the run
+
+Append a JSONL entry to `/opt/data/logs/digest-runs.jsonl`:
+
+```json
+{"ts": "ISO_TIMESTAMP", "status": "ok|broken|error", "urls_total": N, "urls_valid": N, "urls_broken": N, "note": "brief description"}
+```
+
+This enables success rate tracking over time.
 
 ### Format Preference (important)
 
@@ -77,35 +148,6 @@ User prefers PLAIN TEXT digests:
 - Simple date header, blank lines between sections
 - Conversational tone, not press-release
 - Raw links section at the end for clicking through
-
-## Token Refresh
-
-OAuth2 tokens expire after 7200s (2 hours). To refresh:
-
-```python
-import urllib.request, urllib.parse, json, base64
-
-with open('/opt/data/config/x-oauth2-tokens.json') as f:
-    tokens = json.load(f)
-
-data = urllib.parse.urlencode({
-    'grant_type': 'refresh_token',
-    'refresh_token': tokens['refresh_token'],
-    'client_id': tokens['client_id'],
-}).encode()
-
-creds = base64.b64encode(f"{tokens['client_id']}:{tokens['client_secret_app32749964']}".encode()).decode()
-req = urllib.request.Request('https://api.x.com/2/oauth2/token', data=data,
-    headers={'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': f'Basic {creds}'})
-new_tokens = json.loads(urllib.request.urlopen(req).read())
-
-# Update stored tokens
-tokens['access_token'] = new_tokens['access_token']
-if 'refresh_token' in new_tokens:
-    tokens['refresh_token'] = new_tokens['refresh_token']
-with open('/opt/data/config/x-oauth2-tokens.json', 'w') as f:
-    json.dump(tokens, f, indent=2)
-```
 
 ## Primary API Interface
 
@@ -119,8 +161,19 @@ Format preference: plain conversational summaries grouped by theme, with raw twe
 
 ## Pitfalls
 
-- Token expires every 2 hours — refresh before expiry or on 401 errors
+- Token expires every 2 hours — refresh before every run (Step 0)
 - List endpoint max is 100 tweets per request, pagination via `pagination_token`
-- Retweets show original author_id but the text includes "RT @user:" prefix
+- Retweets show original author_id but the text includes `"RT @user:"` prefix
 - Rate limits: 900/15min for app-only, 900/15min for user auth on most endpoints
 - Bookmarks endpoint requires actual user_id (e.g. `43469078`), NOT `me` — `/users/me/bookmarks` returns 400. The wrapper handles this automatically by reading user_id from the token file.
+- NEVER let the LLM construct or rewrite tweet URLs — always use `--links-only` output verbatim
+- **Caching**: Responses are cached to disk for **30 days** to reduce XAPI costs. See `references/caching.md` for technical details.
+- If `digest-validate` fails with many broken URLs, consult `references/xapi-debugging.md` for common issues and fixes.
+
+## Fallback for API unavailability
+
+When the X API is unavailable (e.g., 401/403 or network issues):
+- Log the error with timestamp and status "error"
+- Do NOT post an automated digest
+- Optionally use a cached/recent snapshot if acceptable to the user
+- Require manual intervention to resolve credentials or accept a delayed digest

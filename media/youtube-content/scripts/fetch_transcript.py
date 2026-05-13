@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
 Fetch a YouTube video transcript and output it as structured JSON.
+Auto-saves raw transcript data to file for future re-formatting.
 
 Usage:
     python fetch_transcript.py <url_or_video_id> [--language en,tr] [--timestamps]
+                         [--save-dir DIR] [--no-save]
 
 Output (JSON):
     {
@@ -14,13 +16,19 @@ Output (JSON):
         "timestamped_text": "00:00 first line\n00:05 second line\n..."
     }
 
+Auto-saves:
+    - {save_dir}/{video_id}.json        (full transcript data with segments)
+    - {save_dir}/{video_id}_timestamped.txt  (timestamped plain text)
+
 Install dependency:  pip install youtube-transcript-api
 """
 
 import argparse
 import json
+import os
 import re
 import sys
+from pathlib import Path
 
 
 def extract_video_id(url_or_id: str) -> str:
@@ -73,6 +81,39 @@ def fetch_transcript(video_id: str, languages: list = None):
     ]
 
 
+def save_transcript_files(video_id: str, segments: list, save_dir: Path):
+    """Save raw transcript data and timestamped text to files."""
+    save_dir = Path(save_dir)
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    full_text = " ".join(seg["text"] for seg in segments)
+    timestamped = "\n".join(
+        f"{format_timestamp(seg['start'])} {seg['text']}" for seg in segments
+    )
+
+    # Build JSON data
+    json_data = {
+        "video_id": video_id,
+        "language": "auto",
+        "segment_count": len(segments),
+        "duration": format_timestamp(segments[-1]["start"] + segments[-1]["duration"]) if segments else "0:00",
+        "segments": segments,
+        "full_text": full_text,
+    }
+
+    # Save JSON with full transcript data
+    json_path = save_dir / f"{video_id}.json"
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(json_data, f, ensure_ascii=False, indent=2)
+
+    # Save timestamped plain text
+    txt_path = save_dir / f"{video_id}_timestamped.txt"
+    with open(txt_path, 'w', encoding='utf-8') as f:
+        f.write(timestamped)
+
+    return json_path, txt_path
+
+
 def main():
     parser = argparse.ArgumentParser(description="Fetch YouTube transcript as JSON")
     parser.add_argument("url", help="YouTube URL or video ID")
@@ -82,6 +123,10 @@ def main():
                         help="Include timestamped text in output")
     parser.add_argument("--text-only", action="store_true",
                         help="Output plain text instead of JSON")
+    parser.add_argument("--save-dir", "-s", default=None,
+                        help="Directory to save raw transcript files. If not set, no files are saved.")
+    parser.add_argument("--no-save", action="store_true",
+                        help="Explicitly disable file saving (even if SAVE_DIR env var is set)")
     args = parser.parse_args()
 
     video_id = extract_video_id(args.url)
@@ -103,6 +148,18 @@ def main():
     timestamped = "\n".join(
         f"{format_timestamp(seg['start'])} {seg['text']}" for seg in segments
     )
+
+    # Save files if requested (or via env var)
+    save_dir = None
+    if not args.no_save:
+        if args.save_dir:
+            save_dir = Path(args.save_dir)
+        elif os.environ.get("SAVE_DIR"):
+            save_dir = Path(os.environ["SAVE_DIR"])
+
+    if save_dir:
+        json_path, txt_path = save_transcript_files(video_id, segments, save_dir)
+        print(f"[Saved: {json_path}, {txt_path}]", file=sys.stderr)
 
     if args.text_only:
         print(timestamped if args.timestamps else full_text)
