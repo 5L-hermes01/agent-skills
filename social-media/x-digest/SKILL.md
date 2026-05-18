@@ -1,7 +1,7 @@
 ---
 name: x-digest
 description: Fetch and summarize X/Twitter list feeds into a digest format. Uses the xapi.py wrapper for OAuth2-authenticated API calls.
-version: 2.0.0
+version: 3.0.0
 author: Hermes Agent
 metadata:
   hermes:
@@ -105,14 +105,10 @@ If API returns 401/403, log the auth error and skip automated posting. Notify op
 ### Step 2: Write thematic summary
 
 - Read ALL tweet content from `/tmp/digest_tweets.txt` — skip pure RTs unless they amplify something notable
-- Group by THEME, not by engagement. Common themes:
-  - Models & Benchmarks (new models, evals, leaderboards)
-  - Developer Tools & Code Agents (IDE, workflows, agent tooling)
-  - ML Research (papers, loss functions, architectures, training)
-  - Infrastructure & Compute (chips, datacenters, scaling)
-  - Community & Events (hackathons, launches, meetups)
-  - Hot Takes & Discourse (opinions, debates, controversy)
+- Group by THEME using the **unified cross-platform theme system** (canonical source: load the `unified-digest-themes` skill). The 7 themes and 5 AI & ML Research sub-themes are defined there — do not duplicate them inline.
+
 - Write a short paragraph per theme summarizing what's discussed and why it matters. Mention author handles.
+- If a story could fit multiple themes, use the **primary signal** rule: identify the central new information and place it under the most specific matching theme.
 
 ### Step 3: Append programmatic links section
 
@@ -167,8 +163,8 @@ Format preference: plain conversational summaries grouped by theme, with raw twe
 - Rate limits: 900/15min for app-only, 900/15min for user auth on most endpoints
 - Bookmarks endpoint requires actual user_id (e.g. `43469078`), NOT `me` — `/users/me/bookmarks` returns 400. The wrapper handles this automatically by reading user_id from the token file.
 - NEVER let the LLM construct or rewrite tweet URLs — always use `--links-only` output verbatim
-- **Caching**: Responses are cached to disk for **30 days** to reduce XAPI costs. See `references/caching.md` for technical details.
-- If `digest-validate` fails with many broken URLs, consult `references/xapi-debugging.md` for common issues and fixes.
+- **Caching**: Responses are cached to disk for **30 days** to reduce XAPI costs. See Step 0 for cache-check procedure.
+- For digest validation failures, check the broken URLs manually — common causes are expired tweet IDs, suspended accounts, or rate-limit blocks on the validation endpoint.
 
 ## Fallback for API unavailability
 

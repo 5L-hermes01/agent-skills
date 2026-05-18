@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [hacker-news, hn, digest, research, daily]
-    related_skills: [x-digest]
+    related_skills: [unified-digest-themes, x-digest]
 ---
 
 # HN Brief Digest
@@ -24,14 +24,9 @@ This skill exists to deliver a **consistent HN Brief digest** to Discord daily a
    - **Level 1**: One sentence capturing the biggest story or dominant mood of the day
    - **Level 2**: A few paragraphs summarizing the major themes and notable stories, written conversationally
 
-2. **📁 Themed Sections** — Stories grouped by the **unified cross-platform theme system** (also used by X-Digest, Papers, etc.):
-   - AI & ML Research
-   - Developer Tools & Infrastructure
-   - Hardware & IoT
-   - Security & Privacy
-   - Industry & Business
-   - Science & Technology
-   - Community & Culture
+2. **📁 Themed Sections** — Stories grouped by the **unified cross-platform theme system**.
+   - Load the `unified-digest-themes` skill for the canonical 7-theme taxonomy and AI & ML Research sub-theme reference.
+   - See `references/ai-ml-research-sub-themes.md` for granular sub-theme guidance within AI & ML Research.
 
 3. **📰 Per-Story Format** — Each story under its theme:
    ```
@@ -80,17 +75,17 @@ Level 2: A few conversational paragraphs covering the major themes, notable stor
 
 ### 2. Themed Sections
 
-Stories grouped under these unified cross-platform themes:
+Stories grouped under the **unified cross-platform theme system** (canonical source: `unified-digest-themes` skill):
 
 | # | Theme | Description |
 |---|-------|-------------|
-| 1 | AI & ML Research | Models, benchmarks, training, papers |
-| 2 | Developer Tools & Infrastructure | IDE, workflows, compute, platforms |
-| 3 | Hardware & IoT | Chips, devices, embedded, robotics |
-| 4 | Security & Privacy | Vulnerabilities, breaches, encryption |
-| 5 | Industry & Business | Funding, companies, products, policy |
+| 1 | AI & ML Research | Models, architectures, training, benchmarks, agents, papers — see [sub-theme reference](references/ai-ml-research-sub-themes.md) for granular breakdown |
+| 2 | Developer Tools & Infrastructure | IDEs, workflows, compute, platforms, agent tooling |
+| 3 | Hardware & IoT | Chips, devices, embedded, robotics, edge inference |
+| 4 | Security & Privacy | Vulnerabilities, breaches, encryption, prompt injection, alignment safety |
+| 5 | Industry & Business | Funding, companies, products, pricing, policy, regulation |
 | 6 | Science & Technology | Physics, bio, space, general science |
-| 7 | Community & Culture | HN meta, debates, nostalgia, offbeat |
+| 7 | Community & Culture | Meta-discussions, events, nostalgia, offbeat, hot takes |
 
 ### 3. Per-Story Format (within each theme)
 
@@ -157,11 +152,13 @@ Before finalizing output, verify:
 - [ ] Domain used is `hn-brief.com`, NOT `hnbrief.net`
 - [ ] Articles view is loaded (not just the digest view)
 - [ ] **Top summary** is present with two levels of detail
-- [ ] Stories are grouped under the **7 unified themes** (not hn-brief.com's themes)
+- [ ] Stories are grouped under the **7 unified themes** (from `unified-digest-themes` skill, not hn-brief.com's themes)
 - [ ] Each story has both **Article:** and **Discussion:** sections
 - [ ] Per-story content comes verbatim from hn-brief.com (not rewritten)
 - [ ] Cache directory structure is maintained
 
 ## 📚 References
 
-- [Thread Evidence & Design History](references/thread-evidence.md) — Original design session, issue discovery, and lessons learned. Read this to understand why the skill is structured this way and what issues occurred before.
+- **Canonical theme taxonomy**: Load the `unified-digest-themes` skill — it is the single source of truth for all theme definitions across HN Brief, X-Digest, AI-News, and arXiv jobs.
+- [AI & ML Research Sub-Theme Reference](references/ai-ml-research-sub-themes.md) — Granular breakdown of "AI & ML Research" into Models, Training, Benchmarks, Agents, and Papers sub-themes.
+- [Thread Evidence & Design History](references/thread-evidence.md) — Original design session, issue discovery, and lessons learned.
