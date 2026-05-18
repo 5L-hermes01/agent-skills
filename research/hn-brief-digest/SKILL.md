@@ -16,9 +16,35 @@ Fetches daily Hacker News summaries from [HN Brief](https://hn-brief.com) and re
 
 ## 🎯 Objective (Why This Skill Exists)
 
-This skill exists to deliver a **consistent, high-fidelity HN Brief digest** to Discord daily at 22:00 EST. The output must match the hn-brief.com "articles" view verbatim — full story summaries followed by full discussion summaries — **not** condensed, re-summarized, or truncated.
+This skill exists to deliver a **consistent HN Brief digest** to Discord daily at 22:00 EST. The output structure is:
 
-> **CRITICAL: Do NOT re-summarize or condense.** The hn-brief.com site already does the AI-powered summarization. Your job is to **reformat** what hn-brief.com provides, not re-process it through another model. Mirror each story's content as-is.
+### Output Structure
+
+1. **📋 Top Summary** — A condensed, AI-written overview of the day's Hacker News, written at **two levels of detail**:
+   - **Level 1**: One sentence capturing the biggest story or dominant mood of the day
+   - **Level 2**: A few paragraphs summarizing the major themes and notable stories, written conversationally
+
+2. **📁 Themed Sections** — Stories grouped by the **unified cross-platform theme system** (also used by X-Digest, Papers, etc.):
+   - AI & ML Research
+   - Developer Tools & Infrastructure
+   - Hardware & IoT
+   - Security & Privacy
+   - Industry & Business
+   - Science & Technology
+   - Community & Culture
+
+3. **📰 Per-Story Format** — Each story under its theme:
+   ```
+   N. Title (domain.com) X points | Y comments
+
+   Article:
+   [full article summary from hn-brief.com]
+
+   Discussion:
+   [full discussion summary from hn-brief.com]
+   ```
+
+> **Note on content**: The hn-brief.com site provides the article and discussion summaries. Your job is to **group and top-summarize** — write the condensed top summary, assign stories to the correct cross-platform theme, and present their hn-brief.com content underneath. Do not rewrite the individual story summaries.
 
 ## 🌐 URLs
 
@@ -38,21 +64,47 @@ This skill exists to deliver a **consistent, high-fidelity HN Brief digest** to 
 4. **Cookie/Cloudflare**: The site may require a Cloudflare challenge. Browser Use handles this automatically.
 5. **Format drift**: Each run of the cron job without this skill attached will produce different output. This skill **must** be attached to the cron job to maintain consistent output format.
 
-## 📝 Output Format
+## 📝 Full Output Structure
 
-Each story in the digest must follow this exact format:
+### 1. Top Summary (condensed, two levels)
+
+Write a short overview at the top of the digest:
+
+```
+HN Brief Daily Digest — YYYY-MM-DD
+
+Level 1: One sentence on the biggest story or dominant trend.
+
+Level 2: A few conversational paragraphs covering the major themes, notable stories, and what they mean. Write this yourself — condense from the hn-brief.com content.
+```
+
+### 2. Themed Sections
+
+Stories grouped under these unified cross-platform themes:
+
+| # | Theme | Description |
+|---|-------|-------------|
+| 1 | AI & ML Research | Models, benchmarks, training, papers |
+| 2 | Developer Tools & Infrastructure | IDE, workflows, compute, platforms |
+| 3 | Hardware & IoT | Chips, devices, embedded, robotics |
+| 4 | Security & Privacy | Vulnerabilities, breaches, encryption |
+| 5 | Industry & Business | Funding, companies, products, policy |
+| 6 | Science & Technology | Physics, bio, space, general science |
+| 7 | Community & Culture | HN meta, debates, nostalgia, offbeat |
+
+### 3. Per-Story Format (within each theme)
 
 ```
 N. Title (domain.com) X points | Y comments
 
 Article:
-[full article summary as shown on hn-brief.com — do not condense or rewrite]
+[full article summary from hn-brief.com]
 
 Discussion:
-[full discussion summary as shown on hn-brief.com — do not condense or rewrite]
+[full discussion summary from hn-brief.com]
 ```
 
-Stories should be grouped by theme (e.g., AI & ML, Developer Tools, Hardware, etc.) matching the hn-brief.com thematic grouping. The daily digest is capped at the top-20 stories from hn-brief.com.
+Each story's **Article** and **Discussion** sections come verbatim from hn-brief.com — do not rewrite them. Your editorial work is the **top summary** and the **theme assignment**.
 
 ## 💾 Caching
 
@@ -104,7 +156,12 @@ Cache is valid for 30 days. Check cache before fetching.
 Before finalizing output, verify:
 - [ ] Domain used is `hn-brief.com`, NOT `hnbrief.net`
 - [ ] Articles view is loaded (not just the digest view)
+- [ ] **Top summary** is present with two levels of detail
+- [ ] Stories are grouped under the **7 unified themes** (not hn-brief.com's themes)
 - [ ] Each story has both **Article:** and **Discussion:** sections
-- [ ] Full summaries are preserved — nothing truncated or re-summarized
-- [ ] Thematic grouping matches hn-brief.com categories
+- [ ] Per-story content comes verbatim from hn-brief.com (not rewritten)
 - [ ] Cache directory structure is maintained
+
+## 📚 References
+
+- [Thread Evidence & Design History](references/thread-evidence.md) — Original design session, issue discovery, and lessons learned. Read this to understand why the skill is structured this way and what issues occurred before.
