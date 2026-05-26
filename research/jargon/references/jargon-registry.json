@@ -1,0 +1,340 @@
+{
+  "version": 1,
+  "last_updated": "2026-05-25T08:00:00Z",
+  "terms": {
+    "BERT": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Models & Architectures",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Bidirectional Encoder Representations from Transformers — a transformer-based language model pretrained on masked language modeling and next-sentence prediction tasks, producing deeply bidirectional contextualized word representations",
+        "high-school": "A foundational language AI model that reads text in both directions simultaneously to understand word meaning from full context",
+        "kindergarten": "A foundational language AI that reads words looking both left and right to understand what they mean in context"
+      },
+      "first_seen": "2026-05-25",
+      "last_seen": "2026-05-25",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "VPO": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Training & Post-Training",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Vector policy optimization — an RL training method that optimizes for diversity across a vector reward space rather than a single scalar reward, improving test-time search performance",
+        "high-school": "Training AI to produce many different kinds of good answers instead of optimizing for just one correct answer",
+        "kindergarten": "Teaching AI to come up with lots of different good ideas instead of just one"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "AMEL": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Benchmarks & Evaluation",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Accumulated message effects on LLM judgments — the phenomenon where prior conversation history polarity systematically biases subsequent LLM-as-judge evaluations",
+        "high-school": "The discovered effect where an AI's judgment in a conversation gets biased by what was said earlier in the same conversation",
+        "kindergarten": "When what an AI has read before in a conversation changes how it judges the next thing you show it"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "BPE": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Models & Architectures",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Byte pair encoding — a subword tokenization algorithm that iteratively merges the most frequent byte or character pairs in a corpus to build a fixed-size vocabulary",
+        "high-school": "Splitting words into smaller pieces by repeatedly merging the most common pair of characters or subwords",
+        "kindergarten": "Breaking words into chunks by merging the most frequent letter pairs, one step at a time"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "BpB": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Models & Architectures",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Bits per byte — a compression efficiency metric measuring the average number of bits needed to encode one byte of text under a model's probability distribution",
+        "high-school": "A metric for how efficiently a model compresses text — lower means the model predicts the text better",
+        "kindergarten": "A score showing how well an AI can compress or predict text — lower scores mean it understands the text better"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "HAR": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Benchmarks & Evaluation",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Human activity recognition — the task of identifying physical activities (walking, running, sitting) from sensor data such as accelerometers, gyroscopes, or video",
+        "high-school": "Using sensors or cameras to identify what physical activity a person is doing — like walking, running, or sitting",
+        "kindergarten": "A computer that can tell if you're walking, running, sitting, or dancing from sensor data"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "NLP": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Papers & Theory",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Natural language processing — a subfield of AI/CS that enables computers to understand, interpret, generate, and manipulate human language in text and speech",
+        "high-school": "The field of AI focused on making computers understand, process, and communicate in human language",
+        "kindergarten": "The field of teaching computers to understand, read, write, and talk in human language"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "PCT": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Training & Post-Training",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Political consistency training — an RL training method that reduces covert political bias in LLMs by optimizing for symmetric sentiment and helpfulness across matched political prompts",
+        "high-school": "A training method that teaches AI to respond consistently no matter how a question is politically framed",
+        "kindergarten": "A training method that teaches AI to be fair and consistent instead of favoring one political side over the other"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "RAG": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Agents & Agent Systems",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Retrieval-augmented generation — a technique that enhances LLM outputs by retrieving relevant documents from an external knowledge base and conditioning generation on them, improving factual accuracy and grounding",
+        "high-school": "Giving an AI access to a searchable knowledge base so it can look up facts instead of relying only on its training data",
+        "kindergarten": "Letting the AI look things up in a library before answering, instead of relying only on what it memorized"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "SER": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Benchmarks & Evaluation",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Speech emotion recognition — computational analysis of acoustic features (prosody, pitch, energy) to classify emotional states from spoken audio",
+        "high-school": "Using computer analysis of tone of voice, pitch, and sound patterns to detect emotions in speech",
+        "kindergarten": "A computer that can tell if you sound happy, sad, or angry from your voice"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "IMU": {
+      "theme": "Hardware & IoT",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Inertial measurement unit — an electronic device combining accelerometers, gyroscopes, and sometimes magnetometers to measure and report a body's specific force, angular rate, and orientation",
+        "high-school": "A sensor package with accelerometers and gyroscopes that measures motion, rotation, and orientation",
+        "kindergarten": "A tiny motion sensor inside phones, watches, and wearables that knows which way you're moving and turning"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "DPO": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Training & Post-Training",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Direct preference optimization using pairwise preferences to align language models with human values",
+        "high-school": "Training AI by showing it which outputs are better and letting it learn from comparisons",
+        "kindergarten": "Teaching AI right from wrong by example"
+      },
+      "first_seen": "2026-05-23",
+      "last_seen": "2026-05-24",
+      "seen_in": []
+    },
+    "GRPO": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Training & Post-Training",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Group relative policy optimization — a reinforcement learning variant that compares groups of outputs rather than individual pairs to compute advantage",
+        "high-school": "A way to train AI by comparing groups of its outputs against each other instead of one-to-one",
+        "kindergarten": "Teaching AI by letting it see many answers and picking the best groups"
+      },
+      "first_seen": "2026-05-23",
+      "last_seen": "2026-05-24",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "RLHF": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Training & Post-Training",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Reinforcement learning from human feedback — using human preferences as a reward signal to fine-tune language models",
+        "high-school": "Training AI based on human ratings of its outputs to align with human preferences",
+        "kindergarten": "Learning from human teachers saying 'good job' or 'try again'"
+      },
+      "first_seen": "2026-05-23",
+      "last_seen": "2026-05-23",
+      "seen_in": []
+    },
+    "MoE": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Models & Architectures",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Mixture of experts — a neural network architecture where different 'expert' subnetworks activate for different inputs, selected by a sparse gating mechanism",
+        "high-school": "Using many specialized sub-models where only the relevant ones activate for each task, saving compute",
+        "kindergarten": "Like having a team of specialists where only the right expert answers each question"
+      },
+      "first_seen": "2026-05-23",
+      "last_seen": "2026-05-25",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "MCP": {
+      "theme": "Developer Tools & Infrastructure",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Model context protocol — an open standard for connecting AI models to external tools, data sources, and services via a unified interface",
+        "high-school": "A standard way for AI to connect to apps, databases, and web services",
+        "kindergarten": "A universal plug for AI to use real-world tools"
+      },
+      "first_seen": "2026-05-23",
+      "last_seen": "2026-05-23",
+      "seen_in": []
+    },
+    "SFT": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Training & Post-Training",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Supervised fine-tuning — training a pre-trained model on labeled examples to specialize it for a specific task or domain",
+        "high-school": "Teaching a pre-trained AI by showing it correct examples of exactly what you want it to do",
+        "kindergarten": "Giving the AI practice problems with the right answers to learn from"
+      },
+      "first_seen": "2026-05-23",
+      "last_seen": "2026-05-23",
+      "seen_in": []
+    },
+    "LoRA": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Training & Post-Training",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Low-rank adaptation — a parameter-efficient fine-tuning method that trains small adaptor matrices instead of updating the full model weights",
+        "high-school": "A memory-efficient way to customize AI models by training small add-on modules instead of retuning everything",
+        "kindergarten": "Sticking a small custom module onto an AI instead of rebuilding it from scratch"
+      },
+      "first_seen": "2026-05-23",
+      "last_seen": "2026-05-23",
+      "seen_in": []
+    },
+    "LLM": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Models & Architectures",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Large language model -- a neural network with billions of parameters trained on vast text corpora to generate and understand human language",
+        "high-school": "A large AI model trained on text that can read, write, reason, and follow instructions",
+        "kindergarten": "A smart computer brain that understands words"
+      },
+      "first_seen": "2026-05-23",
+      "last_seen": "2026-05-25",
+      "seen_in": ["arxiv:cs.CL", "hn-brief:2026-05-23", "hn-brief:weekly-2026-W21"]
+    },
+    "VLN": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Agents & Agent Systems",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Vision-and-language navigation — training agents to navigate physical environments by following natural language instructions and interpreting visual input",
+        "high-school": "Teaching AI to move through spaces by understanding both what it sees and spoken directions",
+        "kindergarten": "A robot that follows directions while looking where it's going"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": []
+    },
+    "ReAct": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Agents & Agent Systems",
+      "source_level": "doctor",
+      "plainspeak": {
+        "doctor": "Reasoning and acting — a prompting framework that interleaves chain-of-thought reasoning with tool-use actions for agentic tasks",
+        "high-school": "A pattern where AI thinks step-by-step and takes actions based on each reasoning step",
+        "kindergarten": "Think then do, think then do, one step at a time"
+      },
+      "first_seen": "2026-05-24",
+      "last_seen": "2026-05-24",
+      "seen_in": []
+    },
+    "OCR": {
+      "theme": "Developer Tools & Infrastructure",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Optical character recognition -- the computational process of converting images of typed, handwritten, or printed text into machine-encoded text, using pattern recognition, feature detection, and often neural networks",
+        "high-school": "Using software to read text from images, scanned documents, or photos and converting it into editable digital text",
+        "kindergarten": "A computer reading printed words and turning them into editable text"
+      },
+      "first_seen": "2026-05-23",
+      "last_seen": "2026-05-24",
+      "seen_in": ["hn-brief:2026-05-23", "hn-brief:weekly-2026-W21"]
+    },
+    "BASIC": {
+      "theme": "Community & Culture",
+      "source_level": "kindergarten",
+      "plainspeak": {
+        "doctor": "Beginner's All-purpose Symbolic Instruction Code -- a family of high-level programming languages originally designed in 1964, widely distributed through early personal computers and microcomputers, serving as the entry point for an entire generation of programmers",
+        "high-school": "A simple, easy-to-learn programming language that came built into early personal computers, letting beginners write programs with straightforward commands",
+        "kindergarten": "An old beginner's computer language that let people tell computers what to do by typing simple instructions"
+      },
+      "first_seen": "2026-05-23",
+      "last_seen": "2026-05-24",
+      "seen_in": ["hn-brief:2026-05-23", "hn-brief:weekly-2026-W21"]
+    },
+    "MLLM": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Models & Architectures",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Multimodal large language model — a language model extended to process and reason over multiple input modalities (text, images, video, audio) simultaneously",
+        "high-school": "A large AI model that can understand both text and images, answering questions about pictures and video",
+        "kindergarten": "A smart computer brain that understands both words and pictures"
+      },
+      "first_seen": "2026-05-25",
+      "last_seen": "2026-05-25",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "VLM": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Models & Architectures",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Vision language model — a neural network trained jointly on image-text pairs that can perform cross-modal tasks such as image captioning, visual question answering, and grounded reasoning",
+        "high-school": "An AI model trained on images paired with text descriptions that can understand pictures and answer questions about them",
+        "kindergarten": "A computer brain that's trained to understand images and the words that describe them"
+      },
+      "first_seen": "2026-05-25",
+      "last_seen": "2026-05-25",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "NLG": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Models & Architectures",
+      "source_level": "high-school",
+      "plainspeak": {
+        "doctor": "Natural language generation — the subfield of AI and computational linguistics concerned with the automatic production of coherent human-like text from structured or unstructured data",
+        "high-school": "The field of AI focused on teaching computers to write text that sounds like it was written by a person",
+        "kindergarten": "Teaching computers to write human-like text all on their own"
+      },
+      "first_seen": "2026-05-25",
+      "last_seen": "2026-05-25",
+      "seen_in": ["arxiv:cs.CL"]
+    }
+  }
+}
