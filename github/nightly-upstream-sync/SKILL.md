@@ -106,6 +106,9 @@ Deliver: origin (to current chat)
 - **`git rm -rf .` on 400+ files can timeout** — avoid bulk operations, use targeted `git add` for custom files only
 - **`git add` fails on gitignored files** — always check with `git check-ignore -q` first
 - **Branch protection needs GitHub Pro for private repos** — use `workflow_run` auto-merge instead
+- **Only `/opt/data/skills/` is synced**, NOT `/opt/data/scripts/`. The nightly sync walks the skills directory only. Scripts (xapi.py, xdigest_fetch.py, nightly-repo-sync.py itself) live outside the skills tree and are NOT in any repo. They exist only on local disk and must be backed up separately.
+- **Auto-merge can fail silently for weeks.** Check auto-merge workflow runs periodically. If there are 10+ open PRs backed up, the auto-merge workflow is broken. See `github-auto-merge-workflow` skill's Known Failure Modes and Recovery sections.
+- **PRs are created but never merged if auto-merge fails.** Each nightly run creates a new branch and PR — they pile up. Clearing up 10+ stale PRs requires manual merge: `gh pr merge PR_NUMBER --squash --delete-branch` for each one that has passing CI.
 
 ## Script Location
 
@@ -113,4 +116,5 @@ Deliver: origin (to current chat)
 
 ## Related Skills
 
-- `github-auto-merge-workflow` — handles the merge-on-green step
+- `github-auto-merge-workflow` — handles the merge-on-green step (see Known Failure Modes section if PRs are backing up)
+- `hermes-agent` — see references/session-expiry-write-protection.md for the common root cause of missed skill updates

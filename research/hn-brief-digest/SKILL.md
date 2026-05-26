@@ -1,13 +1,13 @@
 ---
 name: hn-brief-digest
 description: Fetch and reformat daily Hacker News summaries from HN Brief (hn-brief.com) into thematic digests with full Article + Discussion format per story. Uses browser automation to access the JS SPA, clicks "articles" view for detailed story summaries.
-version: 3.0.0
+version: 4.0.0
 author: Hermes Agent
 license: MIT
 metadata:
   hermes:
     tags: [hacker-news, hn, digest, research, daily]
-    related_skills: [unified-digest-themes, x-digest]
+    related_skills: [unified-digest-themes, jargon, x-digest]
 ---
 
 # HN Brief Digest
@@ -28,7 +28,17 @@ This skill exists to deliver a **consistent HN Brief digest** to Discord daily a
    - Load the `unified-digest-themes` skill for the canonical 7-theme taxonomy and AI & ML Research sub-theme reference.
    - See `references/ai-ml-research-sub-themes.md` for granular sub-theme guidance within AI & ML Research.
 
-3. **📰 Per-Story Format** — Each story under its theme:
+3. **🔤 Jargon** — After the last themed section, include a jargon block with decoded technical terms from the day's stories.
+
+   Load the `jargon` skill (references/jargon-registry.json) to scan all story titles, article summaries, and discussion text for known jargon. For each term found, append a labeled definition:
+
+   ```
+   **Jargon:** 🎒 LLM = a smart computer brain that understands words. AGI = a computer that can think like a human.
+   ```
+
+   Use kindergarten-level definitions for general audience. Mark newly discovered terms with 🆕.
+
+4. **📰 Per-Story Format** — Each story under its theme:
    ```
    N. Title (domain.com) X points | Y comments
 
@@ -101,7 +111,9 @@ Discussion:
 
 Each story's **Article** and **Discussion** sections come verbatim from hn-brief.com — do not rewrite them. Your editorial work is the **top summary** and the **theme assignment**.
 
-## 💾 Caching
+## 💾 Caching (MANDATORY)
+
+You MUST save formatted digests to cache. These feeds the weekly and monthly summary jobs.
 
 All fetched content is cached locally at `/opt/data/cache/hn-brief/`:
 
@@ -110,18 +122,22 @@ All fetched content is cached locally at `/opt/data/cache/hn-brief/`:
 └── YYYY/
     └── MM/
         └── DD/
-            ├── raw-page.html       (full browser snapshot)
             └── formatted-digest.txt
 ```
 
-Cache is valid for 30 days. Check cache before fetching.
+**Important rules:**
+1. **Check before fetching**: Compute yesterday's date. If `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt` exists, skip fetching and deliver the cached version.
+2. **Save after formatting**: After formatting the digest (Step 5 below), ALWAYS write the final formatted text to `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt` using write_file or terminal(mkdir -p + tee). This is NOT optional — weekly/monthly jobs depend on it.
+3. **Cache is valid for 30 days.** After 30 days, re-fetch.
+4. **Use yesterday's date** (summaries are for previous day's news, so YYYY-MM-DD = today - 1 day).
 
 ## 🔄 Workflow
 
 ### Step 0: Check Cache
 - Compute yesterday's date (summaries are for previous day's news)
-- Check if `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt` exists and is < 30 days old
-- If cached, skip fetching and deliver the cached version
+- Check if `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt` exists
+- If cached and < 30 days old, read the file and deliver it directly (skip all browser steps)
+- If not cached, proceed with Step 1
 
 ### Step 1: Navigate to HN Brief
 - `browser_navigate(url="https://hn-brief.com")`
@@ -134,15 +150,27 @@ Cache is valid for 30 days. Check cache before fetching.
 ### Step 3: Extract Content
 - Use `browser_scroll(direction="down")` repeatedly to load all stories
 - Extract full page content via `browser_console(expression=JS_DOM_QUERY)`
-- Save raw content to cache
 
-### Step 4: Format Output
+### Step 4: Format by Themes
 - Parse each story from the extracted content
-- Follow the **Output Format** section above exactly
-- Group by thematic categories
-- Save formatted version to cache
+- Group by thematic categories using the unified-digest-themes 7-category taxonomy
+- Write the Top Summary (Level 1 + Level 2) and the themed sections
+- Follow the Output Structure section above exactly
+- Keep plain text only (no markdown formatting, emojis, or bold) for the cron deliverable
 
-### Step 5: Deliver
+### Step 5: Run Jargon Detection
+- Load the `jargon` skill
+- Read `references/jargon-registry.json` via skill_view(name='jargon', file_path='references/jargon-registry.json')
+- Scan all story titles, article summaries, and discussion text from your formatted output for known jargon terms
+- Append a **Jargon:** line at the end of the formatted digest with kindergarten-level definitions
+- For newly detected terms not in the registry, mark with 🆕
+
+### Step 6: Save to Cache (MANDATORY)
+- Create cache directory: `mkdir -p /opt/data/cache/hn-brief/YYYY/MM/DD/`
+- Write the FULL formatted digest (including jargon block) to `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt`
+- Use write_file() for this — it ensures the file is written atomically
+
+### Step 7: Deliver
 - The cron job's final response is automatically delivered — do NOT use send_message
 - Plain text only (no markdown formatting, emojis, or bold)
 
@@ -161,4 +189,20 @@ Before finalizing output, verify:
 
 - **Canonical theme taxonomy**: Load the `unified-digest-themes` skill — it is the single source of truth for all theme definitions across HN Brief, X-Digest, AI-News, and arXiv jobs.
 - [AI & ML Research Sub-Theme Reference](references/ai-ml-research-sub-themes.md) — Granular breakdown of "AI & ML Research" into Models, Training, Benchmarks, Agents, and Papers sub-themes.
+- [Date Navigation](references/date-navigation.md) — How to use the 📅 date picker to load historical dates for popularity tracking and backfill.
 - [Thread Evidence & Design History](references/thread-evidence.md) — Original design session, issue discovery, and lessons learned.
+
+### Digest Pipeline Architecture
+
+The HN Brief digest system has four tiers of cron jobs feeding from the same file cache:
+
+| Tier | Job | Schedule | Channel | Source |
+|------|-----|----------|---------|--------|
+| Daily | hn-brief-daily-digest | 22:00 UTC | #hacker-news | Browser scrape hn-brief.com |
+| Weekly | hn-brief-weekly-digest | Sun 23:00 UTC | #weekly-hn-brief | 7 cached formatted-digest.txt files |
+| Monthly | hn-brief-monthly-digest | 1st 20:00 UTC | #monthly-hn-brief | ~30 cached formatted-digest.txt files |
+| PopTracker | hn-brief-popularity-tracker | Sun 21:00 UTC | #weekly-hn-brief | Re-scrapes hn-brief via 📅 date picker for a date ~30 days back |
+
+**Cache dependency**: Weekly, monthly, and popularity jobs all rely on the daily job writing `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt`. This is why caching is MANDATORY in the workflow above.
+
+**Popularity tracking**: Re-scrape an old date via the 📅 date picker + articles view. Compare current points/comments vs cached publish-time values. Report which stories gained the most traction. No API keys — just the browser and cache.

@@ -1,13 +1,13 @@
 ---
 name: unified-digest-themes
 description: Canonical cross-platform theme taxonomy for all digest skills (HN Brief, X-Digest, AI-News, arXiv). Single source of truth — update here, propagate everywhere.
-version: 1.0.0
+version: 1.1.0
 author: Hermes Agent
 license: MIT
 metadata:
   hermes:
     tags: [themes, taxonomy, digest, cross-platform]
-    related_skills: [hn-brief-digest, x-digest, arxiv]
+    related_skills: [hn-brief-digest, x-digest, arxiv, jargon]
 ---
 
 # Unified Digest Theme System
@@ -59,6 +59,11 @@ When a story could fit multiple themes:
 
 3. **Default tiebreaker**: place under the theme that appears earliest in the numbered list above.
 
+## 📚 References
+
+- [Cache-First Digest Aggregation Pattern](references/digest-aggregation-pattern.md) — Cross-platform pattern for building weekly/monthly summary jobs from daily digest caches. Covers the `context_from` limitation, cache contract between harvester and aggregator, scheduling conventions, and the script-based variant.
+
 ## Version History
 
+- 1.1.0 (2026-05-24): Added digest-aggregation-pattern.md reference for daily→weekly→monthly cache-first aggregation. Added jargon to related_skills.
 - 1.0.0 (2026-05-18): Initial canonical taxonomy. 7 top-level themes + 5 AI & ML Research sub-themes.
