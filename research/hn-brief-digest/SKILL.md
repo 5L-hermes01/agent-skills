@@ -58,16 +58,16 @@ This skill exists to deliver a **consistent HN Brief digest** to Discord daily a
 - **Digest view**: Navigate to `https://hn-brief.com/`, default view shows the daily digest
 
 ## ⚠️ Known Pitfalls
-
+## ⚠️ Known Pitfalls
 1. **Wrong domain**: `hnbrief.net` does not work. Always use `hn-brief.com`
-2. **JS SPA**: hn-brief.com is a JavaScript single-page app. `web_extract` or `curl` will NOT get the full content. You **must** use the browser tool:
-   - `browser_navigate(url="https://hn-brief.com")`
-   - Click the **"articles"** button for detailed story-by-story summaries with both Article and Discussion sections
-   - Use `browser_scroll(direction="down")` to reveal more stories
-   - Use `browser_console(expression='...')` to extract full page text via JavaScript DOM queries
-3. **No .md file access**: The old `https://hn-brief.com/summaries/YYYY/MM/DD.md` URLs no longer work as plain markdown endpoints. All content is rendered client-side.
-4. **Cookie/Cloudflare**: The site may require a Cloudflare challenge. Browser Use handles this automatically.
-5. **Format drift**: Each run of the cron job without this skill attached will produce different output. This skill **must** be attached to the cron job to maintain consistent output format.
+2. **JS SPA**: hn-brief.com is a JavaScript single-page app. `web_extract` or `curl` will NOT get the full content. Preferred path: use the Playwright helper script (`scripts/fetch-hn-brief.mjs`) to bypass Cloudflare, then use the SPA's own inline `fetch('summaries/...')` calls to obtain article/digest markdown.
+3. **No plain .md access**: The old `https://hn-brief.com/summaries/YYYY/MM/DD.md` URLs no longer serve markdown directly. They return Cloudflare challenges/403. All content must be obtained through an authenticated SPA session.
+4. **Cookie/Cloudflare**: The site requires a Cloudflare challenge. A headless Chromium session visiting `https://hn-brief.com` and waiting for `networkidle` establishes the required cookies so the SPA's own `fetch()` calls succeed.
+5. **Tool set varies**: Not all Hermes environments expose `browser_navigate`/`browser_click`/`browser_scroll`/`browser_console`. Do not hard-fail when those are missing; use the Playwright script path or cron-output fallback instead.
+6. **Articles view matters**: The "articles" tab provides per-story Article + Discussion sections used by this skill. The default "digest" view is insufficient.
+7. **Format drift**: Each run of the cron job without this skill attached will produce different output. This skill **must** be attached to the cron job to maintain consistent output format.
+8. **No inline backfill in cron**: Do NOT use shell hacks as workarounds inside cron prompts. Cron sessions should call the standalone backfill script as a one-off job.
+9. **Atomic cache writes only**: Cache must always use terminal-based atomic writes. Do not rely on write_file for cache — stream drops are silent and corrupt backups.
 
 ## 📝 Full Output Structure
 
@@ -113,7 +113,7 @@ Each story's **Article** and **Discussion** sections come verbatim from hn-brief
 
 ## 💾 Caching (MANDATORY)
 
-You MUST save formatted digests to cache. These feeds the weekly and monthly summary jobs.
+You MUST save formatted digests to cache. This feeds the weekly and monthly summary jobs.
 
 All fetched content is cached locally at `/opt/data/cache/hn-brief/`:
 
@@ -127,9 +127,24 @@ All fetched content is cached locally at `/opt/data/cache/hn-brief/`:
 
 **Important rules:**
 1. **Check before fetching**: Compute yesterday's date. If `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt` exists, skip fetching and deliver the cached version.
-2. **Save after formatting**: After formatting the digest (Step 5 below), ALWAYS write the final formatted text to `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt` using write_file or terminal(mkdir -p + tee). This is NOT optional — weekly/monthly jobs depend on it.
+2. **Save after formatting**: After formatting the digest (Step 6 below), ALWAYS write the finalized formatted text to `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt` using terminal(`mkdir -p ...` + `python ...`) to avoid dropped tool-call streams. See **Cache Reliability** below.
 3. **Cache is valid for 30 days.** After 30 days, re-fetch.
 4. **Use yesterday's date** (summaries are for previous day's news, so YYYY-MM-DD = today - 1 day).
+
+### Cache Reliability
+A known failure mode is a partial `write_file` stream drop (e.g. `Connection reset by peer`). Use a terminal-based atomic write instead:
+
+```bash
+mkdir -p /opt/data/cache/hn-brief/YYYY/MM/DD
+printf '%s\n' "$(cat)" > /opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt
+```
+
+Implementation steps:
+1. Write the full final formatted digest text to a temp file:
+   `/tmp/hn-brief-formatted.txt`
+2. Run: `mkdir -p /opt/data/cache/hn-brief/YYYY/MM/DD`
+3. Rename: `mv /tmp/hn-brief-formatted.txt /opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt`
+4. Verify: re-read the file and confirm it exists and size>0 before delivering.
 
 ## 🔄 Workflow
 
@@ -139,24 +154,21 @@ All fetched content is cached locally at `/opt/data/cache/hn-brief/`:
 - If cached and < 30 days old, read the file and deliver it directly (skip all browser steps)
 - If not cached, proceed with Step 1
 
-### Step 1: Navigate to HN Brief
-- `browser_navigate(url="https://hn-brief.com")`
-- Wait for page to fully render
+### Step 1: Fetch HN Brief Content
+If dedicated browser tools exist in this environment, use them as the primary path (`browser_navigate` → `"articles"` → scroll/extract). If not, use the established fallback:
+1. Run the Playwright helper: `node /opt/data/scripts/fetch-hn-brief.mjs`
+2. That script confirms the SPA's markdown endpoints: `summaries/YYYY/MM/DD.md` and `summaries/YYYY/MM/DD-digest.md`
+3. Use the same Playwright session to call the SPA's own `fetch()` for the target date and write the fetched markdown to `/tmp/hn-brief-<YYYY-MM-DD>.md` for parsing.
+4. **Cron-output salvage**: If both browser tooling and the Playwright script fail, inspect nearby cron-output files under `/opt/data/cron/output/`. Many failed/partial runs still contain the formatted digest text or the skill prompt payload. Look for:
+   - `/opt/data/cron/output/<hn-brief-job-id>/<YEAR-MONTH-DAY>_*.md`
+   - Extract the formatted digest portion after `## Response` — it may already be themed+formatted from a previous run.
+   - Treat this as a viable source because the agent in that run already loaded the skill, formatted, and cached the work. Reuse it rather than redoing the live fetch.
+5. Only declare a date unavailable after the cron-output salvage also fails.
 
-### Step 2: Switch to Articles View
-- Find and click the **"articles"** button/tab
-- This reveals detailed per-story summaries with Article + Discussion sections
-
-### Step 3: Extract Content
-- Use `browser_scroll(direction="down")` repeatedly to load all stories
-- Extract full page content via `browser_console(expression=JS_DOM_QUERY)`
-
-### Step 4: Format by Themes
-- Parse each story from the extracted content
-- Group by thematic categories using the unified-digest-themes 7-category taxonomy
-- Write the Top Summary (Level 1 + Level 2) and the themed sections
-- Follow the Output Structure section above exactly
-- Keep plain text only (no markdown formatting, emojis, or bold) for the cron deliverable
+### Step 2: Parse Stories and Extract Article/Discussion
+- Parse the markdown fetched for the target date.
+- Each story must have both **Article:** and **Discussion:** text from hn-brief.com.
+- Preserve the original hn-brief.com wording; your job is grouping, not rewriting.
 
 ### Step 5: Run Jargon Detection
 - Load the `jargon` skill
@@ -188,9 +200,12 @@ Before finalizing output, verify:
 ## 📚 References
 
 - **Canonical theme taxonomy**: Load the `unified-digest-themes` skill — it is the single source of truth for all theme definitions across HN Brief, X-Digest, AI-News, and arXiv jobs.
+- [Backfill Operating Procedure](references/hn-brief-backfill.md) — How and when to backfill missing cache dates using `/opt/data/scripts/hn-brief-backfill.py`, including cache-first checks and atomic write verification.
+- [Cache Inventory](references/cache_inventory.md) — Known missing-date patterns, root-cause notes, and half-finished job cleanup.
 - [AI & ML Research Sub-Theme Reference](references/ai-ml-research-sub-themes.md) — Granular breakdown of "AI & ML Research" into Models, Training, Benchmarks, Agents, and Papers sub-themes.
 - [Date Navigation](references/date-navigation.md) — How to use the 📅 date picker to load historical dates for popularity tracking and backfill.
 - [Thread Evidence & Design History](references/thread-evidence.md) — Original design session, issue discovery, and lessons learned.
+- [Cloudflare + SPA Bypass](references/cloudflare-bypass.md) — Verified Playwright pattern for fetching HN Brief markdown when direct tool access is unavailable or returns 403.
 
 ### Digest Pipeline Architecture
 
@@ -206,3 +221,9 @@ The HN Brief digest system has four tiers of cron jobs feeding from the same fil
 **Cache dependency**: Weekly, monthly, and popularity jobs all rely on the daily job writing `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt`. This is why caching is MANDATORY in the workflow above.
 
 **Popularity tracking**: Re-scrape an old date via the 📅 date picker + articles view. Compare current points/comments vs cached publish-time values. Report which stories gained the most traction. No API keys — just the browser and cache.
+
+**Cache-failure fallback**: If a downstream job finds no cache for its target date(s), it must not simply stop. It should attempt a direct date-picker scrape first, and only declare the date unavailable after that fetch fails.
+
+**Backfill trigger**: Any day with no `/opt/data/cache/hn-brief/YYYY/MM/DD/formatted-digest.txt` should be treated as a backfill candidate. Priority for filling: dates expressly used by weekly/monthly/popularity jobs before any other minor dates.
+
+**Cache-failure fallback**: If the popularity tracker finds no cache for its target date(s), it MUST NOT simply report “no cache data available” and stop. Instead, it should fall back to scraping the date directly via the date picker/`browser` tool so the check still produces useful output. Only after a direct fetch attempt should it declare the date unavailable.
