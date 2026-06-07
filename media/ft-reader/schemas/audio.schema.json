@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ft audio output",
+  "type": "object",
+  "required": ["schema_version", "uuid", "available"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "uuid": {"type": "string"},
+    "available": {"type": "boolean"},
+    "remote_url": {"type": ["string", "null"]},
+    "duration": {"type": ["string", "null"]},
+    "size": {"type": ["integer", "null"]},
+    "local_path": {"type": ["string", "null"]}
+  }
+}

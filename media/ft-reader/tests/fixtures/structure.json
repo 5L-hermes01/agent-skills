@@ -1,0 +1,38 @@
+{
+  "sectionlist": ["home", "world", "tech"],
+  "sections": {
+    "home": {
+      "meta": {"title": "Home", "uuid": null},
+      "slots": [
+        {"id": "top-slice", "layout": "triple", "storyGroups": [
+          {"useStreamAsTitle": true, "teasers": [
+            "11111111-1111-1111-1111-111111111111",
+            "22222222-2222-2222-2222-222222222222"
+          ]}
+        ]},
+        {"id": "top-stories", "layout": "foursmall", "title": "TOP STORIES", "storyGroups": [
+          {"teasers": ["33333333-3333-3333-3333-333333333333"]}
+        ]}
+      ]
+    },
+    "world": {
+      "meta": {"title": "World", "uuid": null},
+      "slots": [
+        {"id": "lead", "storyGroups": [
+          {"teasers": ["44444444-4444-4444-4444-444444444444"]}
+        ]}
+      ]
+    },
+    "tech": {
+      "meta": {"title": "Technology", "uuid": null},
+      "slots": [
+        {"id": "lead", "teasers": ["55555555-5555-5555-5555-555555555555"]},
+        {"id": "top_stories", "title": "News", "teasers": [
+          "66666666-6666-6666-6666-666666666666",
+          "77777777-7777-7777-7777-777777777777"
+        ]}
+      ]
+    }
+  },
+  "version": "test"
+}

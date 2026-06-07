@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ft myft output",
+  "type": "object",
+  "required": ["schema_version", "fetched_at", "count", "items"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "fetched_at": {"type": "string"},
+    "count": {"type": "integer"},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "uuid": {"type": ["string", "null"]},
+          "title": {"type": ["string", "null"]},
+          "standfirst": {"type": ["string", "null"]},
+          "url": {"type": ["string", "null"]},
+          "saved_date": {"type": ["string", "null"]},
+          "published": {"type": ["string", "null"]},
+          "audio_available": {"type": "boolean"},
+          "audio_url": {"type": ["string", "null"]},
+          "audio_duration": {"type": ["string", "null"]},
+          "audio_local_path": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}
