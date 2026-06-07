@@ -98,6 +98,18 @@ pytest
 
 All unit tests use synthetic fixtures and HTTP mocks. No live network calls, no copyrighted FT content in the repo.
 
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `SESSION_EXPIRED` (exit 2) on any command | Cookies have expired or were never pasted | Re-run the bookmarklet + `pbpaste \| python scripts/set_cookie.py` |
+| `ft myft` returns `SESSION_EXPIRED` while `ft headlines` works | Using the legacy 4-cookie env vars instead of `FT_COOKIE` | Set `FT_COOKIE` to the full browser Cookie header — MyFT needs the coupled cookie set |
+| Headlines look wrong/empty for a section | FT changed the `/structure/v14` response shape; teasers now in a new field | Inspect `cache/<hash>.json` for the structure dump and adjust `_teasers_for_section()` in `src/ft_reader/headlines.py` |
+| `ft article` returns title/body but `byline` is `null` | FT changed byline tree node shape (`data` vs `value`) | Both keys are handled in `_flatten_byline()`; if it breaks again, log the raw `byline` field and extend the helper |
+| Persistent 429 / 503 errors | Rate-limit pressure from a cold-cache fan-out, or CDN flagging | Raise `FT_REQUEST_SPACING_MS` (default 350) or lower `FT_MAX_FETCHES` (default 200). Backoff is automatic for the in-process burst. |
+| Article returns `{"error": "access denied"}` mid-run | Mid-session cookie rotation by FT | Re-paste cookies. Long-running scripts should catch `SESSION_EXPIRED` and prompt the user. |
+| FT changes API version (`/structure/v14` → `/v15`) | Endpoint moved | Update `STRUCTURE_URL` in `src/ft_reader/headlines.py`; bump the package version. |
+
 ## Files
 
 ```

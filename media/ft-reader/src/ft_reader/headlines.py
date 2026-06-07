@@ -5,7 +5,7 @@ from typing import Optional
 
 from .article import get_article
 from .cache import Cache, TTL_HEADLINES
-from .client import FTClient
+from .client import FTClient, FTError
 
 
 STRUCTURE_URL = (
@@ -85,7 +85,9 @@ def get_headlines(
         for uuid in teasers:
             try:
                 art = get_article(uuid, client=client, cache=cache, no_cache=no_cache)
-            except Exception as e:  # tolerate per-article failures
+            except FTError as e:
+                # Tolerate per-article fetch failures so one bad article doesn't
+                # blank the whole section. Programming errors propagate.
                 headlines.append({"uuid": uuid, "error": str(e)[:200]})
                 continue
             headlines.append({

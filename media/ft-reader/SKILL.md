@@ -3,31 +3,62 @@ name: ft-reader
 description: Read FT.com articles, top headlines per section, audio (MP3) links, and the user's MyFT saved articles using their authenticated browser session. Emits structured JSON for downstream skills. 30-day article/audio cache, 1-hour cache for headline/list endpoints.
 version: 0.1.0
 author: Nick Lange
+license: Apache-2.0
 metadata:
   hermes:
     tags: [ft, financial-times, news, audio, myft, json, agent-cli]
+    required_environment_variables: [FT_COOKIE]
+    required_commands: [python, ft]
 ---
 
 # ft-reader
 
 Programmatic FT.com access via the user's logged-in session cookies. Exposes four CLI commands; all emit JSON on stdout for consumption by other agents/skills.
 
-## When to Use
+## When to Use — natural-language → command
 
-- "Give me today's FT headlines" → `ft headlines`
-- "Read me the FT article at <url>" → `ft article <url>` (text) + `ft audio <url> --download` (MP3)
-- "Summarize my MyFT saved list" / "queue up everything I saved for listening" → `ft myft --download-audio`
+| User says… | Run |
+|---|---|
+| "give me today's FT headlines", "what's new on FT", "top FT stories in <section>" | `ft headlines [--section <id>] [--limit N]` |
+| "read me the FT article at <url>", "summarize this FT piece", "what does this FT article say" | `ft article <uuid-or-url>` |
+| "download the FT audio for this", "give me the MP3 of this FT article", "is there a listen-to version" | `ft audio <uuid-or-url> [--download]` |
+| "show my FT saved list", "what's in my MyFT", "queue up everything I saved for listening" | `ft myft [--download-audio]` |
 
-## Setup (one-time per session-cookie lifetime)
+## Setup
 
-1. `cd media/ft-reader`
-2. `python -m venv .venv && source .venv/bin/activate`
-3. `pip install -e .`
-4. Sign in to https://app.ft.com in a browser. In DevTools → **Network**, click any request to `app-api.ft.com`, copy the full `Cookie:` header value.
-5. `cp .env.sample .env` and paste it as `FT_COOKIE=...` (single line).
-6. When the skill prints `SESSION_EXPIRED`, repeat steps 4–5.
+**One-time, by the human** (the agent cannot do this — it requires a browser):
 
-> A legacy 4-cookie mode (`FT_SESSION_S` + 3 others) exists for headlines/article/audio only — `ft myft` requires the full `FT_COOKIE` blob.
+1. Sign in to https://app.ft.com.
+2. DevTools → **Network** → click any `app-api.ft.com` request → copy the full `Cookie:` header value.
+3. From this skill's directory: `pbpaste | python scripts/set_cookie.py` (writes `.env` mode 600). Bookmarklet in `README.md` for one-click copy.
+
+**One-time install** (operator or a Hermes setup script):
+
+```bash
+python3 -m pip install --user -e /path/to/agent-skills/media/ft-reader
+# This puts the `ft` command on PATH and installs the `requests` dep.
+```
+
+When the skill prints `SESSION_EXPIRED` (exit code 2), the human repeats steps 1–3.
+
+## Agent invocation
+
+Hermes Agent (and any agent driving this through a `terminal()` / shell tool) should call the installed `ft` binary directly. All commands print JSON to stdout, errors to stderr, with non-zero exit on failure.
+
+```bash
+ft headlines --section tech --limit 5
+ft article <uuid-or-ft-url>
+ft audio <uuid-or-ft-url> --download
+ft myft --limit 50 --download-audio
+```
+
+If `ft` is not on PATH, fall back to:
+
+```bash
+python3 -m ft_reader.cli headlines --section tech --limit 5
+```
+
+Add `--json-errors` to mirror errors as structured `{"error": {...}}` JSON on stdout (useful when parsing tool output programmatically).
 
 ## Commands
 
