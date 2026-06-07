@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ft article output",
+  "type": "object",
+  "required": ["schema_version", "uuid"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "uuid": {"type": "string"},
+    "title": {"type": ["string", "null"]},
+    "standfirst": {"type": ["string", "null"]},
+    "byline": {"type": ["string", "null"]},
+    "published": {"type": ["string", "null"]},
+    "url": {"type": ["string", "null"]},
+    "body": {},
+    "audio": {}
+  }
+}
