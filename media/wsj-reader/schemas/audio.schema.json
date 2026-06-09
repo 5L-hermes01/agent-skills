@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "wsj audio output",
+  "type": "object",
+  "required": ["schema_version", "article_id", "available"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "article_id": {"type": ["string", "null"]},
+    "article_url": {"type": ["string", "null"]},
+    "available": {"type": "boolean"},
+    "remote_url": {"type": ["string", "null"]},
+    "duration": {"type": ["integer", "null"]},
+    "local_path": {"type": ["string", "null"]}
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "wsj article output",
+  "type": "object",
+  "required": ["schema_version", "url"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "url": {"type": "string"},
+    "article_id": {"type": ["string", "null"]},
+    "headline": {"type": ["string", "null"]},
+    "flashline": {"type": ["string", "null"]},
+    "summary": {"type": ["string", "null"]},
+    "byline": {"type": ["string", "null"]},
+    "section": {"type": ["string", "null"]},
+    "published": {"type": ["string", "null"]},
+    "article_type": {"type": ["string", "null"]},
+    "body": {}
+  }
+}
