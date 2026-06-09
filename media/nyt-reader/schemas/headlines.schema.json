@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "nyt headlines output",
+  "type": "object",
+  "required": ["schema_version", "fetched_at", "articles"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "fetched_at": {"type": "string"},
+    "articles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "uri": {"type": ["string", "null"]},
+          "url": {"type": ["string", "null"]},
+          "source_id": {"type": ["string", "null"]},
+          "title": {"type": ["string", "null"]},
+          "byline": {"type": ["string", "null"]},
+          "section": {"type": ["string", "null"]},
+          "published": {"type": ["string", "null"]},
+          "audio_url": {"type": ["string", "null"]},
+          "audio_duration": {"type": ["number", "null"]},
+          "audio_kind": {"type": ["string", "null"]},
+          "audio_headline": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}
