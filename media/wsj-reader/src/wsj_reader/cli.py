@@ -40,10 +40,38 @@ def main(argv: Optional[list[str]] = None) -> int:
                    help="Accepted before the subcommand (same as the per-subcommand flag).")
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    ph = sub.add_parser("headlines", help="Print-edition headlines (cached 1h).")
-    ph.add_argument("--date", help="Edition date as YYYYMMDD. Defaults to most recent.")
-    ph.add_argument("--section", choices=["front", "business", "world", "popular"],
-                    help="Restrict to a single section.")
+    ph = sub.add_parser(
+        "headlines",
+        help=(
+            "Headlines. Default transport is GraphQL (no auth, no Datadome). "
+            "Use --via=html for the print-edition scraper (subject to "
+            "Datadome and the 24h cookie cycle)."
+        ),
+    )
+    ph.add_argument(
+        "--via", choices=["graphql", "html"], default="graphql",
+        help="Transport: 'graphql' (default, no auth) or 'html' (print edition).",
+    )
+    ph.add_argument(
+        "--collection", default=None,
+        help=(
+            "GraphQL only: collection ID (e.g. MOST-POP-WSJ-NO-OPN_1) "
+            "or alias (most-popular, most-popular-opinion, breaking). "
+            "Defaults to most-popular."
+        ),
+    )
+    ph.add_argument(
+        "--audio-only", action="store_true",
+        help="GraphQL only: drop articles without a narrated MP3.",
+    )
+    ph.add_argument(
+        "--date",
+        help="HTML only: edition date as YYYYMMDD. Defaults to most recent.",
+    )
+    ph.add_argument(
+        "--section", choices=["front", "business", "world", "popular"],
+        help="HTML only: restrict to a single section.",
+    )
     ph.add_argument("--limit", type=int, default=50, help="Max articles (0=all).")
     _common(ph)
 
@@ -61,8 +89,13 @@ def main(argv: Optional[list[str]] = None) -> int:
     try:
         if args.cmd == "headlines":
             payload = get_headlines(
-                edition_date=args.date, section=args.section,
-                limit=args.limit, no_cache=args.no_cache,
+                via=args.via,
+                collection=args.collection,
+                audio_only=args.audio_only,
+                edition_date=args.date,
+                section=args.section,
+                limit=args.limit,
+                no_cache=args.no_cache,
             )
         elif args.cmd == "article":
             payload = _wrap(get_article(args.url, no_cache=args.no_cache))

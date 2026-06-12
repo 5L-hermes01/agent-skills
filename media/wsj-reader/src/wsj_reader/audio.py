@@ -23,6 +23,61 @@ from .client import NotFoundError, WSJClient
 ARTICLE_ID_RE = re.compile(r"WP-WSJ-\d{7,12}", re.IGNORECASE)
 
 
+def resolve_audio_for_id(
+    article_id: str,
+    *,
+    client: Optional[WSJClient] = None,
+    cache: Optional[Cache] = None,
+    no_cache: bool = False,
+    article_url: Optional[str] = None,
+) -> dict:
+    """Resolve audio metadata + constructed MP3 URL from just a WP-WSJ-* id.
+
+    No HTML fetch, no Cookie required. Used by both `get_audio()` and the
+    GraphQL headlines path, so we keep the construction logic in one place.
+
+    Returns dict with: article_id, available, remote_url, duration, byline,
+    audio_uuid. Caller may add download/local_path.
+    """
+    client = client or WSJClient()
+    cache = cache or Cache()
+    article_id = article_id.upper().strip()
+    resolve_url = (
+        f"{WSJClient.AUDIO_RESOLVE}?"
+        f"{urlencode({'type': 'read-to-me', 'query': article_id})}"
+    )
+    payload = None if no_cache else cache.get_json("GET", resolve_url, TTL_AUDIO_RESOLVE)
+    if payload is None:
+        payload = client.get_json(resolve_url, referer=article_url)
+        cache.set_json("GET", resolve_url, payload)
+
+    items = payload.get("items") or []
+    out = {
+        "article_id": article_id,
+        "available": False,
+        "remote_url": None,
+        "duration": None,
+        "audio_uuid": None,
+        "byline": None,
+    }
+    if not items:
+        return out
+
+    item = items[0]
+    out["duration"] = _to_int(item.get("duration"))
+    out["byline"] = item.get("author") or None
+    uuid = _strip_braces(item.get("id") or "")
+    creation_date = _yyyymmdd(item.get("formattedCreationDate"))
+    if uuid and creation_date and article_id:
+        out["audio_uuid"] = uuid.lower()
+        out["available"] = True
+        out["remote_url"] = (
+            f"https://m.wsj.net/audio/{creation_date}/{uuid.lower()}/1/"
+            f"ele-{article_id.lower()}-full.mp3"
+        )
+    return out
+
+
 def get_audio(
     url_or_id: str,
     *,
@@ -33,36 +88,21 @@ def get_audio(
 ) -> dict:
     client = client or WSJClient()
     cache = cache or Cache()
-    article_id, article_url = _resolve_article_id(url_or_id, client=client, cache=cache, no_cache=no_cache)
-
-    resolve_url = f"{WSJClient.AUDIO_RESOLVE}?{urlencode({'type': 'read-to-me', 'query': article_id})}"
-    payload = None if no_cache else cache.get_json("GET", resolve_url, TTL_AUDIO_RESOLVE)
-    if payload is None:
-        payload = client.get_json(resolve_url, referer=article_url)
-        cache.set_json("GET", resolve_url, payload)
-
-    items = payload.get("items") or []
+    article_id, article_url = _resolve_article_id(
+        url_or_id, client=client, cache=cache, no_cache=no_cache,
+    )
+    resolved = resolve_audio_for_id(
+        article_id, client=client, cache=cache, no_cache=no_cache,
+        article_url=article_url,
+    )
     out = {
-        "article_id": article_id,
+        "article_id": resolved["article_id"],
         "article_url": article_url,
-        "available": False,
-        "remote_url": None,
-        "duration": None,
+        "available": resolved["available"],
+        "remote_url": resolved["remote_url"],
+        "duration": resolved["duration"],
         "local_path": None,
     }
-    if not items:
-        return out
-
-    item = items[0]
-    out["duration"] = _to_int(item.get("duration"))
-    uuid = _strip_braces(item.get("id") or "")
-    creation_date = _yyyymmdd(item.get("formattedCreationDate"))
-    if uuid and creation_date and article_id:
-        out["available"] = True
-        out["remote_url"] = (
-            f"https://m.wsj.net/audio/{creation_date}/{uuid.lower()}/1/"
-            f"ele-{article_id.lower()}-full.mp3"
-        )
     if download and out["available"] and out["remote_url"]:
         out["local_path"] = str(
             download_mp3(out["remote_url"], client=client, cache=cache, no_cache=no_cache)
