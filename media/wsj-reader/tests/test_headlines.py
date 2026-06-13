@@ -120,6 +120,14 @@ def test_headlines_graphql_default(fake_env, monkeypatch):
         }]},
         status=200,
     )
+    # CDN probe — /1/ exists at the canonical size (240s * 128kbps / 8).
+    responses.add(
+        responses.GET,
+        re.compile(r"https://m\.wsj\.net/audio/20260608/aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb/1/.*"),
+        body=b"\x00" * 8, status=206,
+        adding_headers={"Content-Range": f"bytes 0-7/{240 * 128_000 // 8}",
+                         "Content-Type": "audio/mpeg"},
+    )
     out = get_headlines(limit=5)
     assert out["schema_version"] == 1
     assert out["via"] == "graphql"
@@ -169,6 +177,15 @@ def test_headlines_graphql_audio_only_filters(fake_env, monkeypatch):
         responses.GET,
         re.compile(r"https://video-api\.shdsvc\.dowjones\.io/.*"),
         callback=audio_cb,
+    )
+    # The second item's CDN probe — /1/ exists at the matching size
+    # (duration=100s × 128kbps / 8 = 1_600_000 bytes).
+    responses.add(
+        responses.GET,
+        re.compile(r"https://m\.wsj\.net/audio/20260608/x-x-x-x-x/1/.*"),
+        body=b"\x00" * 8, status=206,
+        adding_headers={"Content-Range": f"bytes 0-7/{100 * 128_000 // 8}",
+                         "Content-Type": "audio/mpeg"},
     )
     out = get_headlines(audio_only=True, limit=5)
     assert len(out["articles"]) == 1
