@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "author": "Test Author",
+      "column": "TTS Article Read",
+      "description": "Synthetic short summary.",
+      "doctypeID": "120",
+      "duration": "300",
+      "formattedCreationDate": "6/8/2026 5:00:00 PM",
+      "id": "{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}",
+      "linkURL": "https://www.wsj.com/finance/test-article-one-aaaa1111",
+      "name": "Synthetic test article one",
+      "videoMP4List": []
+    }
+  ]
+}

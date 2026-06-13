@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "wsj headlines output",
+  "type": "object",
+  "required": ["schema_version", "fetched_at", "articles"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "fetched_at": {"type": "string"},
+    "via": {"enum": ["graphql", "html"]},
+    "collection_id": {"type": ["string", "null"]},
+    "edition_date": {"type": ["string", "null"]},
+    "articles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {"type": "string"},
+          "article_id": {"type": ["string", "null"]},
+          "headline": {"type": ["string", "null"]},
+          "summary": {"type": ["string", "null"]},
+          "section": {"type": ["string", "null"]},
+          "flashline": {"type": ["string", "null"]},
+          "published": {"type": ["string", "null"]},
+          "byline": {"type": ["string", "null"]},
+          "image_url": {"type": ["string", "null"]},
+          "image_alt": {"type": ["string", "null"]},
+          "audio_available": {"type": "boolean"},
+          "audio_url": {"type": ["string", "null"]},
+          "audio_duration": {"type": ["integer", "null"]},
+          "audio_uuid": {"type": ["string", "null"]},
+          "breaking_news": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}
