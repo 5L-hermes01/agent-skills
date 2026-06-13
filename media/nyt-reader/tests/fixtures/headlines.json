@@ -1,0 +1,49 @@
+{
+  "data": {
+    "personalizationHomes": [
+      {
+        "__typename": "ProgrammingNode",
+        "sourceId": "test-home-1",
+        "personalizedData": [
+          {
+            "__typename": "PersonalizedAsset",
+            "asset": {
+              "__typename": "Article",
+              "uri": "nyt://article/11111111-1111-1111-1111-111111111111",
+              "url": "https://www.nytimes.com/2026/01/01/test/sample-story-one.html",
+              "sourceId": "100000000000001",
+              "firstPublished": "2026-01-01T08:00:00.000Z",
+              "headline": {"__typename": "CreativeWorkHeadline", "default": "Synthetic test headline one"},
+              "bylines": [{"renderedRepresentation": "By Test Author"}],
+              "section": {"__typename": "Section", "displayName": "Test Section"},
+              "featuredAudio": {
+                "__typename": "FeaturedAudio",
+                "asset": {
+                  "__typename": "Audio",
+                  "audioContentType": "SYNTHETIC_NARRATION",
+                  "fileUrl": "https://static.nytimes.com/narrated-articles/synthetic/article-11111111-1111-1111-1111-111111111111/job-1/article-11111111-1111-1111-1111-111111111111-job-1.mp3",
+                  "length": 300,
+                  "headline": {"default": "Synthetic Narration for headline one"}
+                }
+              }
+            }
+          },
+          {
+            "__typename": "PersonalizedAsset",
+            "asset": {
+              "__typename": "Article",
+              "uri": "nyt://article/22222222-2222-2222-2222-222222222222",
+              "url": "https://www.nytimes.com/2026/01/02/test/sample-story-two.html",
+              "sourceId": "100000000000002",
+              "firstPublished": "2026-01-02T08:00:00.000Z",
+              "headline": {"__typename": "CreativeWorkHeadline", "default": "Synthetic test headline two (no audio)"},
+              "bylines": [{"renderedRepresentation": "By Another Author"}],
+              "section": {"__typename": "Section", "displayName": "Other Section"},
+              "featuredAudio": null
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

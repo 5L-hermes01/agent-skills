@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "nyt article output",
+  "type": "object",
+  "required": ["schema_version", "url"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "url": {"type": ["string", "null"]},
+    "uri": {"type": ["string", "null"]},
+    "title": {"type": ["string", "null"]},
+    "byline": {"type": ["string", "null"]},
+    "section": {"type": ["string", "null"]},
+    "published": {"type": ["string", "null"]},
+    "body": {},
+    "audio_url": {"type": ["string", "null"]},
+    "audio_duration": {"type": ["number", "null"]}
+  }
+}
