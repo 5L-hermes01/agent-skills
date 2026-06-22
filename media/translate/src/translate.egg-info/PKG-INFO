@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: translate
+Version: 0.1.0
+Summary: JSON-in/JSON-out translation pipe. Pluggable LLM backend (Ollama default, cloud fallback). Composable with any reader skill that emits standard JSON.
+Author: Nick Lange
+License: Apache-2.0
+Requires-Python: >=3.10
+Provides-Extra: dev
+Requires-Dist: pytest>=7; extra == "dev"

@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+src/translate/__init__.py
+src/translate/cache.py
+src/translate/cli.py
+src/translate/walker.py
+src/translate.egg-info/PKG-INFO
+src/translate.egg-info/SOURCES.txt
+src/translate.egg-info/dependency_links.txt
+src/translate.egg-info/entry_points.txt
+src/translate.egg-info/requires.txt
+src/translate.egg-info/top_level.txt
+src/translate/backends/__init__.py
+src/translate/backends/noop.py
+src/translate/backends/ollama.py
+tests/test_cli_noop.py
+tests/test_walker.py

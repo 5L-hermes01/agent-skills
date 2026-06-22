@@ -1,0 +1,2 @@
+[console_scripts]
+waytoagi = waytoagi_reader.cli:main
