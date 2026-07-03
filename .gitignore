@@ -25,3 +25,14 @@ venv/
 *.pat
 **/secrets/
 **/tokens.json
+
+# Build artifacts
+*.egg-info/
+.pytest_cache/
+
+# Runtime caches
+**/cache/
+
+# Tool tracking
+.jules/
+
