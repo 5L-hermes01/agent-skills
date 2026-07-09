@@ -1,0 +1,32 @@
+{
+  "grand_highlander_hybrid_limited_awd": {
+    "cheapest_otd": 57708.958600000005,
+    "cheapest_price": 52947,
+    "vin": "5TDACAB51TS116254",
+    "dealer": "Edmark Toyota",
+    "state": "ID",
+    "dist": 2552.041621145088,
+    "vdp_url": "https://www.edmarktoyota.com/inventory/new-2026-toyota-grand-highlander-hybrid-limited-all-wheel-drive-limited-hybrid-awd-5tdacab51ts116254/",
+    "date": "2026-07-08"
+  },
+  "grand_highlander_hybrid_nightshade_awd": {
+    "cheapest_otd": 63302.45040000001,
+    "cheapest_price": 58108,
+    "vin": "5TDACAB55TS115818",
+    "dealer": "Freeway Toyota of Gilroy",
+    "state": "CA",
+    "dist": 3000.937239759248,
+    "vdp_url": "https://www.freewaytoyotagilroy.com/inventory/new-2026-toyota-grand-highlander-hybrid-hybrid-nightshade-awd-nightshade-hybrid-5tdacab55ts115818/",
+    "date": "2026-07-08"
+  },
+  "chrysler_pacifica_pinnacle_awd": {
+    "cheapest_otd": 66092.15160000001,
+    "cheapest_price": 60682,
+    "vin": "2C4RC3PG0VR588739",
+    "dealer": "Faricy Chrysler Jeep",
+    "state": "CO",
+    "dist": 1924.6460674231623,
+    "vdp_url": "https://www.faricy.com/inventory/new-2027-chrysler-pacifica-pinnacle-awd-passenger-van-2c4rc3pg0vr588739/",
+    "date": "2026-07-08"
+  }
+}
