@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "last_updated": "2026-05-25T08:00:00Z",
+  "last_updated": "2026-07-16T06:51:55Z",
   "terms": {
     "BERT": {
       "theme": "AI & ML Research",
@@ -13,9 +13,7 @@
       },
       "first_seen": "2026-05-25",
       "last_seen": "2026-05-25",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "VPO": {
       "theme": "AI & ML Research",
@@ -28,9 +26,7 @@
       },
       "first_seen": "2026-05-24",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "AMEL": {
       "theme": "AI & ML Research",
@@ -43,9 +39,7 @@
       },
       "first_seen": "2026-05-24",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "BPE": {
       "theme": "AI & ML Research",
@@ -58,9 +52,7 @@
       },
       "first_seen": "2026-05-24",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "BpB": {
       "theme": "AI & ML Research",
@@ -73,9 +65,7 @@
       },
       "first_seen": "2026-05-24",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "HAR": {
       "theme": "AI & ML Research",
@@ -88,9 +78,7 @@
       },
       "first_seen": "2026-05-24",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "NLP": {
       "theme": "AI & ML Research",
@@ -103,9 +91,7 @@
       },
       "first_seen": "2026-05-24",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "PCT": {
       "theme": "AI & ML Research",
@@ -118,9 +104,7 @@
       },
       "first_seen": "2026-05-24",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "RAG": {
       "theme": "AI & ML Research",
@@ -132,10 +116,8 @@
         "kindergarten": "Letting the AI look things up in a library before answering, instead of relying only on what it memorized"
       },
       "first_seen": "2026-05-24",
-      "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "last_seen": "2026-07-16",
+      "seen_in": ["arxiv:cs.CL"]
     },
     "SER": {
       "theme": "AI & ML Research",
@@ -148,9 +130,7 @@
       },
       "first_seen": "2026-05-24",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "IMU": {
       "theme": "Hardware & IoT",
@@ -162,9 +142,7 @@
       },
       "first_seen": "2026-05-24",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "DPO": {
       "theme": "AI & ML Research",
@@ -190,9 +168,7 @@
       },
       "first_seen": "2026-05-23",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "RLHF": {
       "theme": "AI & ML Research",
@@ -229,8 +205,8 @@
         "kindergarten": "Giving the AI practice problems with the right answers to learn from"
       },
       "first_seen": "2026-05-23",
-      "last_seen": "2026-05-23",
-      "seen_in": []
+      "last_seen": "2026-07-16",
+      "seen_in": ["arxiv:cs.CL"]
     },
     "LoRA": {
       "theme": "AI & ML Research",
@@ -242,8 +218,8 @@
         "kindergarten": "Sticking a small custom module onto an AI instead of rebuilding it from scratch"
       },
       "first_seen": "2026-05-23",
-      "last_seen": "2026-05-23",
-      "seen_in": []
+      "last_seen": "2026-07-15",
+      "seen_in": ["smol-ai:2026-07-15"]
     },
     "LLM": {
       "theme": "AI & ML Research",
@@ -256,13 +232,8 @@
         "kindergarten": "A smart computer brain that understands words"
       },
       "first_seen": "2026-05-23",
-      "last_seen": "2026-07-14",
-      "seen_in": [
-        "arxiv:cs.CL",
-        "hn-brief:2026-05-23",
-        "hn-brief:weekly-2026-W21",
-        "smol-ai:2026-07-14"
-      ]
+      "last_seen": "2026-07-15",
+      "seen_in": ["arxiv:cs.CL", "hn-brief:2026-05-23", "hn-brief:weekly-2026-W21", "smol-ai:2026-07-14", "smol-ai:2026-07-15"]
     },
     "GGUF": {
       "theme": "Developer Tools & Infrastructure",
@@ -274,10 +245,8 @@
         "kindergarten": "A zipped file for AI brains that lets them run on regular computers instead of giant server rooms"
       },
       "first_seen": "2026-07-14",
-      "last_seen": "2026-07-14",
-      "seen_in": [
-        "smol-ai:2026-07-14"
-      ]
+      "last_seen": "2026-07-15",
+      "seen_in": ["smol-ai:2026-07-14", "smol-ai:2026-07-15"]
     },
     "vLLM": {
       "theme": "Developer Tools & Infrastructure",
@@ -289,10 +258,8 @@
         "kindergarten": "A fast engine that runs AI chatbots for lots of people at once without running out of memory"
       },
       "first_seen": "2026-07-14",
-      "last_seen": "2026-07-14",
-      "seen_in": [
-        "smol-ai:2026-07-14"
-      ]
+      "last_seen": "2026-07-15",
+      "seen_in": ["smol-ai:2026-07-14", "smol-ai:2026-07-15"]
     },
     "SWE": {
       "theme": "Developer Tools & Infrastructure",
@@ -305,9 +272,7 @@
       },
       "first_seen": "2026-07-14",
       "last_seen": "2026-07-14",
-      "seen_in": [
-        "smol-ai:2026-07-14"
-      ]
+      "seen_in": ["smol-ai:2026-07-14"]
     },
     "VRAM": {
       "theme": "Hardware & IoT",
@@ -319,10 +284,8 @@
         "kindergarten": "The short-term memory inside your graphics card that the AI uses to do its thinking"
       },
       "first_seen": "2026-07-14",
-      "last_seen": "2026-07-14",
-      "seen_in": [
-        "smol-ai:2026-07-14"
-      ]
+      "last_seen": "2026-07-15",
+      "seen_in": ["smol-ai:2026-07-14", "smol-ai:2026-07-15"]
     },
     "ZDR": {
       "theme": "Security & Privacy",
@@ -335,9 +298,7 @@
       },
       "first_seen": "2026-07-14",
       "last_seen": "2026-07-14",
-      "seen_in": [
-        "smol-ai:2026-07-14"
-      ]
+      "seen_in": ["smol-ai:2026-07-14"]
     },
     "CUDA": {
       "theme": "Developer Tools & Infrastructure",
@@ -349,10 +310,8 @@
         "kindergarten": "NVIDIA's magic sauce that lets regular programs use the graphics card's super-fast brain for thinking"
       },
       "first_seen": "2026-07-14",
-      "last_seen": "2026-07-14",
-      "seen_in": [
-        "smol-ai:2026-07-14"
-      ]
+      "last_seen": "2026-07-15",
+      "seen_in": ["smol-ai:2026-07-14", "smol-ai:2026-07-15"]
     },
     "MoE": {
       "theme": "AI & ML Research",
@@ -365,11 +324,8 @@
         "kindergarten": "Like having a team of specialists where only the right expert answers each question"
       },
       "first_seen": "2026-05-23",
-      "last_seen": "2026-07-14",
-      "seen_in": [
-        "arxiv:cs.CL",
-        "smol-ai:2026-07-14"
-      ]
+      "last_seen": "2026-07-15",
+      "seen_in": ["arxiv:cs.CL", "smol-ai:2026-07-14", "smol-ai:2026-07-15"]
     },
     "VLN": {
       "theme": "AI & ML Research",
@@ -407,10 +363,7 @@
       },
       "first_seen": "2026-05-23",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "hn-brief:2026-05-23",
-        "hn-brief:weekly-2026-W21"
-      ]
+      "seen_in": ["hn-brief:2026-05-23", "hn-brief:weekly-2026-W21"]
     },
     "BASIC": {
       "theme": "Community & Culture",
@@ -422,10 +375,7 @@
       },
       "first_seen": "2026-05-23",
       "last_seen": "2026-05-24",
-      "seen_in": [
-        "hn-brief:2026-05-23",
-        "hn-brief:weekly-2026-W21"
-      ]
+      "seen_in": ["hn-brief:2026-05-23", "hn-brief:weekly-2026-W21"]
     },
     "MLLM": {
       "theme": "AI & ML Research",
@@ -438,9 +388,7 @@
       },
       "first_seen": "2026-05-25",
       "last_seen": "2026-05-25",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "VLM": {
       "theme": "AI & ML Research",
@@ -453,9 +401,7 @@
       },
       "first_seen": "2026-05-25",
       "last_seen": "2026-05-25",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "NLG": {
       "theme": "AI & ML Research",
@@ -468,9 +414,7 @@
       },
       "first_seen": "2026-05-25",
       "last_seen": "2026-05-25",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "TTS": {
       "theme": "AI & ML Research",
@@ -483,9 +427,7 @@
       },
       "first_seen": "2026-06-24",
       "last_seen": "2026-06-24",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "CoT": {
       "theme": "AI & ML Research",
@@ -497,10 +439,8 @@
         "kindergarten": "Making AI show its work one step at a time, like showing your math homework"
       },
       "first_seen": "2026-06-18",
-      "last_seen": "2026-06-18",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "last_seen": "2026-07-16",
+      "seen_in": ["arxiv:cs.CL"]
     },
     "POMDP": {
       "theme": "AI & ML Research",
@@ -513,9 +453,7 @@
       },
       "first_seen": "2026-06-18",
       "last_seen": "2026-06-18",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "MCMC": {
       "theme": "Science & Technology",
@@ -527,9 +465,7 @@
       },
       "first_seen": "2026-06-18",
       "last_seen": "2026-06-18",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "CPT": {
       "theme": "AI & ML Research",
@@ -542,9 +478,7 @@
       },
       "first_seen": "2026-06-18",
       "last_seen": "2026-06-18",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
     },
     "MAS": {
       "theme": "AI & ML Research",
@@ -557,9 +491,91 @@
       },
       "first_seen": "2026-06-18",
       "last_seen": "2026-06-18",
-      "seen_in": [
-        "arxiv:cs.CL"
-      ]
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "MTP": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Models & Architectures",
+      "source_level": "doctor",
+      "saturated": false,
+      "plainspeak": {
+        "doctor": "Multi-token prediction — a speculative decoding technique where the model predicts multiple future tokens simultaneously from a shared representation, traded off against increased compute per forward pass for higher throughput in autoregressive generation",
+        "high-school": "A technique where AI predicts several upcoming words at once instead of one at a time, making text generation faster",
+        "kindergarten": "A trick where the AI guesses several words ahead all at once, like reading ahead in a book so you can speak faster"
+      },
+      "first_seen": "2026-07-15",
+      "last_seen": "2026-07-15",
+      "seen_in": ["smol-ai:2026-07-15"]
+    },
+    "RoPE": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Models & Architectures",
+      "source_level": "doctor",
+      "saturated": false,
+      "plainspeak": {
+        "doctor": "Rotary position embedding — a method for encoding token position information into transformer attention mechanisms by rotating query and key vectors by angles proportional to position, enabling relative position awareness without learned position embeddings",
+        "high-school": "A way to tell the AI where words are in a sentence by adding rotation-based signals to each word's mathematical representation",
+        "kindergarten": "A way for AI to remember word order by spinning each word's meaning a little based on where it sits in the sentence"
+      },
+      "first_seen": "2026-07-15",
+      "last_seen": "2026-07-15",
+      "seen_in": ["smol-ai:2026-07-15"]
+    },
+    "OPD": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Training & Post-Training",
+      "source_level": "doctor",
+      "saturated": false,
+      "plainspeak": {
+        "doctor": "On-policy distillation — a training technique where a student model learns from a teacher model's behavior during live generation, using the teacher's outputs under the current policy as training targets",
+        "high-school": "A training method where a smaller AI learns from a larger AI's outputs while both are actively generating answers to questions",
+        "kindergarten": "A smaller AI learning from watching a bigger AI think out loud in real time"
+      },
+      "first_seen": "2026-07-16",
+      "last_seen": "2026-07-16",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "MQM": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Benchmarks & Evaluation",
+      "source_level": "doctor",
+      "saturated": false,
+      "plainspeak": {
+        "doctor": "Multidimensional Quality Metrics — a framework for evaluating translation quality across multiple dimensions including accuracy, fluency, terminology, style, and formatting, using a structured typology of error types and severities",
+        "high-school": "A detailed scoring system for translation quality that checks many dimensions like accuracy, natural phrasing, correct terminology, and proper formatting",
+        "kindergarten": "A report card for translations that grades accuracy, how natural it sounds, and correct use of terms"
+      },
+      "first_seen": "2026-07-16",
+      "last_seen": "2026-07-16",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "TIES": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Training & Post-Training",
+      "source_level": "doctor",
+      "saturated": false,
+      "plainspeak": {
+        "doctor": "Trim, Elect Sign, Merge — a model merging technique that resolves conflicts between task-specific finetuned models by trimming small-magnitude changes, electing the sign direction for each parameter via majority vote, and merging only the agreed-upon changes, outperforming simple interpolation of weights",
+        "high-school": "A method for combining multiple specialized AI models into one by keeping only the changes that most models agree on, discarding small or conflicting adjustments",
+        "kindergarten": "A way to blend several trained AIs into one by keeping only the parts they all agree on, skipping the small stuff"
+      },
+      "first_seen": "2026-07-16",
+      "last_seen": "2026-07-16",
+      "seen_in": ["arxiv:cs.CL"]
+    },
+    "ABSA": {
+      "theme": "AI & ML Research",
+      "sub_theme": "Papers & Theory",
+      "source_level": "high-school",
+      "saturated": false,
+      "plainspeak": {
+        "doctor": "Aspect-based sentiment analysis — a fine-grained NLP task that identifies the sentiment expressed toward specific aspects or targets within a text (e.g., 'great food but terrible service' → positive toward food, negative toward service) rather than the overall sentence polarity",
+        "high-school": "Analyzing the emotional tone toward specific parts of a sentence rather than the overall feeling — e.g., positive about the food but negative about the service in 'great food but terrible service'",
+        "kindergarten": "Figuring out how someone feels about specific things in a review — like that the food is good but the service is bad, even in the same sentence"
+      },
+      "first_seen": "2026-07-16",
+      "last_seen": "2026-07-16",
+      "seen_in": ["arxiv:cs.CL"]
     }
   }
 }
