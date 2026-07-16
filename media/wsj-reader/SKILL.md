@@ -1,7 +1,7 @@
 ---
 name: wsj-reader
 description: Read Wall Street Journal print-edition headlines, articles, and the publisher-narrated MP3s ("read-to-me") using the user's authenticated browser session. Emits structured JSON for downstream skills. 30-day article/audio cache, 1-hour cache for headlines.
-version: 0.1.0
+version: 0.2.0
 author: Nick Lange
 license: Apache-2.0
 metadata:
@@ -47,7 +47,7 @@ When the skill prints `SESSION_EXPIRED` (exit code 2), repeat the cookie capture
 ## Agent invocation
 
 ```bash
-wsj headlines                                 # most recent print edition
+wsj headlines                                 # most recent headlines (GraphQL)
 wsj headlines --date 20260608                 # specific date
 wsj headlines --section business --limit 5
 wsj article https://www.wsj.com/finance/...html
@@ -84,3 +84,9 @@ The skill caches the audio-resolution call for 30 days alongside the MP3.
 ## Tests
 
 `pip install -e ".[dev]" && pytest` — unit tests use synthetic fixtures and HTTP mocks (no live calls, no copyrighted WSJ content in the repo).
+
+## Version History
+
+- 0.2.0 (2026-07-15): WSJ's shared-data.dowjones.io GraphQL endpoint now requires cookies.
+  Added `Cookie` header to GraphQL transport. Both transports still work; the cookie
+  is no longer optional for the GraphQL path.

@@ -1,9 +1,7 @@
 """WSJ headlines — two transports.
 
 * `via="graphql"` (default): hits shared-data.dowjones.io/gateway/graphql with
-  a persisted `summaryCollectionContent` query. NO authentication, not
-  Datadome-protected. Inline audio_url resolution per article. Works
-  indefinitely without re-paste.
+  a persisted `summaryCollectionContent` query. Cookie required since mid-2026.
 * `via="html"` (legacy): scrapes the print-edition HTML at
   /print-edition/{YYYYMMDD}/frontpage. Body-rich but subject to Datadome
   bot protection and the 24h cookie cycle.

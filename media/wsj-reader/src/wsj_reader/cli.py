@@ -22,14 +22,13 @@ def main(argv: Optional[list[str]] = None) -> int:
     ph = sub.add_parser(
         "headlines",
         help=(
-            "Headlines. Default transport is GraphQL (no auth, no Datadome). "
-            "Use --via=html for the print-edition scraper (subject to "
-            "Datadome and the 24h cookie cycle)."
+            "Headlines. Default transport is GraphQL (cookie required since "
+            "mid-2026). Use --via=html for the print-edition scraper."
         ),
     )
     ph.add_argument(
         "--via", choices=["graphql", "html"], default="graphql",
-        help="Transport: 'graphql' (default, no auth) or 'html' (print edition).",
+        help="Transport: 'graphql' (default, cookie required) or 'html' (print edition).",
     )
     ph.add_argument(
         "--collection", default=None,
