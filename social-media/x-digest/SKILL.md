@@ -1,7 +1,7 @@
 ---
 name: x-digest
 description: Fetch and summarize X/Twitter list feeds into a digest format. Uses xapi.py (X API v2 OAuth2) as primary with transparent twitterapi.io fallback and enrichment.
-version: 4.2.0
+version: 4.4.0
 author: Hermes Agent 01
 metadata:
   hermes:
@@ -169,21 +169,132 @@ Append a JSONL entry to `/opt/data/logs/digest-runs.jsonl`:
 
 This enables success rate tracking over time.
 
-### Format Preference (important)
+## Delivery to Signal (Daily)
 
-User prefers PLAIN TEXT digests:
-- No markdown headers (#)
-- No emoji section dividers (━━━━)
-- No bold (**)
-- Simple date header, blank lines between sections
-- Conversational tone, not press-release
-- Raw links section at the end for clicking through
+### Format: individual tweets per message
+
+Signal truncates long messages. **Do not batch tweets** into a single prose section with links appendix.
+Instead, send each high-signal tweet as its own message using `hermes send`.
+
+### Mechanism: `hermes send`
+
+```bash
+hermes send --to "signal:Twitter Processing" "@handle — one-line context\nLink: https://x.com/i/status/ID"
+```
+
+`hermes send` reuses the gateway's Signal credentials — no auth needed. It sends text as a native Signal message.
+
+### Signal delivery script
+
+`scripts/daily_signal_delivery.py` does the full pipeline:
+1. Fetch 50 tweets via xdigest_fetch.py
+2. Sort by engagement (likes + retweets*3 + replies*2)
+3. Pick top ~15 high-signal items (skip pure RTs unless they amplify something notable)
+4. Send each as an individual `hermes send` message with 4-second delay between sends
+5. Log results to `/opt/data/logs/digest-runs.jsonl` with status `signal_daily_ok`
+
+### Format rules (per tweet message)
+
+- Keep each message under 400 chars (tweet text excerpt + link)
+- One line of context (user's actual text, not a summary) plus the link
+- Use `@handle` prefix consistently
+- Link format: `https://x.com/i/status/ID` (raw, no URL shorteners)
+- No emoji, no headers, no bold — Signal supports markdown but keep it minimal
+- Skip replies that lack standalone context, skip low-engagement quotes
+- 4-second pause between messages to respect Signal rate limits
+- If a tweet text is too long, excerpt the first ~120 chars and add `…`
+
+### Rate limiting
+
+Signal-cli enforces ~1 message per 4 seconds. The delivery script handles this with `time.sleep(4)` between sends. For 15 tweets, total delivery time is ~60 seconds. This is fine for a background cron job — it runs at 09:00 UTC with no user waiting on it.
+
+## Delivery to Discord (Weekly)
+
+### Weekly aggregation from daily cache
+
+Every daily cron run saves its full delivery content (prose + raw tweet links) to:
+
+```
+/opt/data/cron/output/7c85dd238709/YYYY-MM-DD_hh-mm-ss.md
+```
+
+The weekly Discord digest reads the last 7 daily files from this cache, aggregates them, and synthesizes a cross-week thematic summary. No re-fetching of tweets needed.
+
+### Workflow
+
+1. **Run aggregator**: `python3 /opt/data/skills/social-media/x-digest/scripts/weekly_aggregator.py > /tmp/weekly_raw.txt`
+2. **Read `/tmp/weekly_raw.txt`** — prose + links from the past 7 days
+3. **Synthesize cross-week themes**: merge repeated topics across days into a single narrative
+4. **Deduplicate links**: each tweet URL appears once in the week's links section, keyed to its first appearance
+5. **Post to Discord** with paragraph-style thematic summaries + deduplicated links section
+6. **Log** to `/opt/data/logs/digest-runs.jsonl` with status `weekly_ok`
+
+### Format rules (Discord weekly)
+
+- Paragraph-style prose per theme (3-5 sentences)
+- Conversational but tight — no filler, no press-release language
+- Raw links section at the end, one per line
+- Header: `AI High Signal Weekly — Jul 11-17, 2026`
+- No markdown headers (#), no emoji dividers, no bold
 
 ## Cron Jobs
 
-The `ai-high-signal-digest` cron job runs daily at 09:00 UTC, delivering thematic summaries to `discord:#x-tweet-digests`.
+Two cron jobs, two platforms:
 
-Format preference: plain conversational summaries grouped by theme, with raw tweet links at the end. No fancy markdown, no emoji section dividers.
+| Job | ID | Schedule | Deliver | Format |
+|-----|----|----------|---------|--------|
+| **Daily Signal** | `7c85dd238709` (update) | `0 9 * * *` | Signal (via `scripts/daily_signal_delivery.py`) | Individual tweets per message, `hermes send` |
+| **Weekly Discord** | New | `0 9 * * 0` | `discord:1492908666871877833` | Thematic prose + deduplicated links |
+
+**Update existing daily job**: change `deliver` from `discord:1492908666871877833` to `origin` (this Signal chat), and switch to `no_agent=True` mode running the delivery script.
+
+**Create new weekly job**: same skills (`x-digest`, `unified-digest-themes`), Sunday 09:00 UTC, delivers to Discord #x-tweet-digests, uses the weekly aggregator script.
+
+## Weekly Aggregation
+
+Every daily cron run saves its full delivery content (prose + raw tweet links) to:
+
+```
+/opt/data/cron/output/7c85dd238709/YYYY-MM-DD_hh-mm-ss.md
+```
+
+These files are an effective daily digest cache — no need to re-fetch tweets for weekly synthesis.
+
+### Aggregator script
+
+`scripts/weekly_aggregator.py` reads the last 7 daily output files and prints their prose + links sections. Run it from the skill directory:
+
+```bash
+python3 /opt/data/skills/social-media/x-digest/scripts/weekly_aggregator.py > /tmp/weekly_raw.txt
+```
+
+Output format:
+```
+=== YYYY-MM-DD ===
+[prose summary]
+
+Links (N):
+@handle: https://x.com/i/status/ID
+...
+```
+
+### Weekly cron job pattern
+
+A weekly aggregator (e.g., Sunday 09:00 UTC delivering to Discord):
+
+1. **Run aggregator**: `python3 /opt/data/skills/social-media/x-digest/scripts/weekly_aggregator.py > /tmp/weekly_raw.txt`
+2. **Read `/tmp/weekly_raw.txt`** — contains prose + all links from the past 7 days
+3. **Synthesize cross-week themes**: merge repeated topics across days into a single narrative. E.g., Kimi K3 appearing Thursday and Friday gets one section, not two.
+4. **Deduplicate links**: a tweet URL appearing on multiple days appears only once in the final links section. Use the earliest day's entry.
+5. **Log to** `/opt/data/logs/digest-runs.jsonl` with status `weekly_ok`
+
+### Pitfalls
+
+- **Inconsistent prose quality**: Some days only have a run summary (OAuth failure status, validation note) rather than full thematic prose. The aggregator handles gracefully — those days produce shorter entries.
+- **File-mutation verifier noise**: Cron output files sometimes end with "File-mutation verifier" warnings. The aggregator strips these via regex.
+- **Missing days gracefully**: If no output file exists for a date, skip it and note the gap in the weekly summary. Don't fail.
+- **Link deduplication is the LLM's job**: The aggregator preserves all links from each day. The LLM must deduplicate in the synthesis step — a tweet that appeared in 3 daily digests gets included once in the weekly links section.
+- **`since_time`/`until_time` for twitterapi.io**: When you need to fetch tweets from a specific date range directly (not from cache), pass Unix timestamps in the advanced_search query: `since_time:1762732800 until_time:1763337600`. These are standard Twitter search operators supported by twitterapi.io.
 
 ## Pitfalls
 
@@ -197,6 +308,9 @@ Format preference: plain conversational summaries grouped by theme, with raw twe
 - Bookmarks have no twitterapi.io fallback — requires login_cookie.
 - For digest validation failures, check the broken URLs manually — common causes are expired tweet IDs, suspended accounts, or rate-limit blocks.
 - **The `tweets` command in xdigest_fetch.py is wired into `main()` at line 359.** Routes URL arguments through `extract_tweet_ids_from_urls()` to `twitterapi_batch_tweets()`. Output matches other commands (text/json/links-only). Profile URLs and noise (console.x.com, /home) are filtered and reported separately. See `references/tweets-command.md` for the implementation reference.
+- **Signal delivery requires `hermes send`**, not the cron's auto-delivery. Individual tweets per message, 4s delay between sends. `daily_signal_delivery.py` handles this. Do NOT try to format Signal messages as multi-tweet prose blocks — Signal truncates them.
+- **Signal group chat IDs**: use `hermes send --list signal` to discover group IDs. They look like `signal:Group Name  [group:<base64>=]`. Pass the full name string as the `--to` target.
+- **No silent failure check**: `hermes send` returns exit code 0 on success. If a message fails (rate limit, network), the return code is 1. The delivery script logs failures but does not retry — retrying a rate-limited send would compound the problem.
 
 ## Transparent Fallback Flow
 
@@ -230,3 +344,5 @@ This is completely transparent to the caller. The output format is identical.
 | `references/fallback-topic-mapping.md` | `LIST_TOPICS` dict for twitterapi.io topic-search fallback when xapi.py is down |
 | `references/tweets-command.md` | Implementation reference for the `tweets` CLI command — URL parsing, batch fetch, output formatting |
 | `scripts/xdigest_fetch.py` | Unified fetcher script — primary xapi.py + twitterapi.io fallback/enrichment. Keep this alongside xapi.py in `/opt/data/scripts/` and update it when adding new backends or list IDs. |
+| `scripts/weekly_aggregator.py` | Weekly aggregation — reads 7 days of cron output files, extracts prose + links for LLM synthesis. Located in skill directory, run via absolute path. |
+| `scripts/daily_signal_delivery.py` | Daily Signal delivery — fetches tweets, picks top ~15 by engagement, sends each as individual `hermes send` message with 4s delay. Designed for `no_agent=True` cron mode. |
