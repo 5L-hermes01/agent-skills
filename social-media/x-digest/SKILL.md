@@ -231,11 +231,13 @@ The weekly Discord digest reads the last 7 daily files from this cache, aggregat
 
 ### Format rules (Discord weekly)
 
-- Paragraph-style prose per theme (3-5 sentences)
+- Paragraph-style prose per theme (2-3 sentences max — keep it tight)
 - Conversational but tight — no filler, no press-release language
-- Raw links section at the end, one per line
+- Raw links section at the end, max 15 links
+- **TOTAL MUST BE UNDER 1900 CHARACTERS** — Discord truncates at 2000
 - Header: `AI High Signal Weekly — Jul 11-17, 2026`
 - No markdown headers (#), no emoji dividers, no bold
+- If the prose is too long, cut prose sentences, not links
 
 ## Cron Jobs
 
