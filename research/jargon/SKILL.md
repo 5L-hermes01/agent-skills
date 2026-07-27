@@ -86,7 +86,34 @@ For newly detected terms found during this run:
 
 Group multiple jargon notes on the same `**Jargon:**` line if many terms appear in one paper. Separate entries with periods. Use kindergarten level for general-audience channels, high-school for technical channels.
 
-## Registry Maintenance
+## Historical Prevalence Scanning (for jargon-popularity-report cron)
+
+When running the weekly popularity report, scan cached formatted digests across all sources:
+
+### Step 1: Load cache inventory
+```bash
+# All cached formatted digests from the last 14 days
+find /opt/data/cache/{hn-brief,xdigest,arxiv,ai-news} -name "formatted-digest.txt" -mtime -14
+```
+For xdigest, also include `tweets-raw.txt` files (daily script output, not yet formatted by weekly LLM).
+
+### Step 2: Scan for all registered terms
+For each cached digest file:
+- Read the full text
+- Case-insensitive match against every term in the registry
+- Count occurrences per term, per source, per date
+- Mark saturated terms separately (they count for tracking but don't appear in output)
+
+### Step 3: Rank and report
+- Sort terms by total occurrences across all sources
+- Report: term, count, sources, trend direction (↑↓→ vs last week)
+- Include saturation status
+- Flag terms that appeared in the last 14 days but are NOT in the registry (🆕 candidates)
+
+### Step 4: Update registry
+- Bump `last_seen` for every term detected
+- Add new `seen_in` sources if a term appeared in a new pipeline
+- Mark terms unseen in 30+ days for possible pruning
 
 - New terms are discovered during digest runs (Step 3)
 - The registry grows organically — there is no "complete" list
