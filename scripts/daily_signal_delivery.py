@@ -14,7 +14,6 @@ LIST_ID = "1585430245762441216"
 MAX_TWEETS = 50
 CACHE_ROOT = Path("/opt/data/cache/xdigest")
 SCRIPTS = Path("/opt/data/scripts")
-XAPI = SCRIPTS / "xapi.py"
 XDIGEST = SCRIPTS / "xdigest_fetch.py"
 
 def run(cmd, timeout=120):
@@ -31,12 +30,7 @@ def main():
     cache_dir = CACHE_ROOT / date_dir
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    # Step 1: Refresh token (best-effort, xdigest_fetch has fallback)
-    _, ok = run([sys.executable, str(XAPI), "refresh-token"], timeout=30)
-    if not ok:
-        print("[token refresh failed — will use twitterapi.io fallback]", file=sys.stderr)
-
-    # Step 2: Fetch tweets (full text)
+    # Step 1: Fetch tweets from list (twitterapi.io primary)
     print(f"[fetching tweets from list {LIST_ID}]", file=sys.stderr)
     tweets_raw, ok = run([sys.executable, str(XDIGEST), "list-tweets", LIST_ID,
                            "--max", str(MAX_TWEETS)], timeout=120)
