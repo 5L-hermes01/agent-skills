@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""
+Atomic digest cache writer. Shared by all digest pipelines.
+
+Usage:
+    digest-cache-write <source> <YYYY-MM-DD> [--verify]
+    
+    Reads formatted digest text from stdin, writes atomically to:
+    /opt/data/cache/<source>/YYYY/MM/DD/formatted-digest.txt
+
+Sources: hn-brief, xdigest, arxiv, ai-news
+
+Exit codes: 0 = written+verified, 1 = write failed, 2 = verify failed
+"""
+import sys, os
+from pathlib import Path
+from datetime import datetime
+
+CACHE_ROOT = Path("/opt/data/cache")
+TEMP_DIR = Path("/tmp")
+
+def main():
+    if len(sys.argv) < 3:
+        print("Usage: digest-cache-write <source> <YYYY-MM-DD>", file=sys.stderr)
+        sys.exit(2)
+
+    source = sys.argv[1]
+    date_str = sys.argv[2]
+
+    # Parse and validate date
+    try:
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        print(f"ERROR: Invalid date '{date_str}'. Use YYYY-MM-DD.", file=sys.stderr)
+        sys.exit(2)
+
+    date_path = dt.strftime("%Y/%m/%d")
+    cache_dir = CACHE_ROOT / source / date_path
+    cache_file = cache_dir / "formatted-digest.txt"
+    temp_file = TEMP_DIR / f"digest-{source}-{date_str}.txt"
+
+    # Read digest from stdin
+    text = sys.stdin.read()
+    if not text.strip():
+        print(f"ERROR: Empty input — refusing to write empty cache.", file=sys.stderr)
+        sys.exit(1)
+
+    # Write atomically: temp in cache dir (same fs) → rename
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        tmp = cache_dir / ".tmp-formatted-digest.txt"
+        tmp.write_text(text)
+        tmp.rename(cache_file)
+    except OSError as e:
+        print(f"ERROR: Failed to write cache: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Verify
+    if not cache_file.exists() or cache_file.stat().st_size == 0:
+        print(f"ERROR: Cache file empty or missing after write: {cache_file}", file=sys.stderr)
+        sys.exit(2)
+
+    print(f"[cached] {cache_file} ({cache_file.stat().st_size} bytes)", file=sys.stderr)
+
+if __name__ == "__main__":
+    main()

@@ -181,9 +181,21 @@ User prefers PLAIN TEXT digests:
 
 ## Cron Jobs
 
-The `ai-high-signal-digest` cron job runs daily at 09:00 UTC, delivering thematic summaries to `discord:#x-tweet-digests`.
+The `ai-high-signal-digest` cron job runs daily at 09:00 UTC via `scripts/daily_signal_delivery.py` (deterministic, no LLM). It fetches tweets, caches raw data, and delivers a daily summary.
 
-Format preference: plain conversational summaries grouped by theme, with raw tweet links at the end. No fancy markdown, no emoji section dividers.
+The `x-weekly-digest` cron job runs Sundays at 09:00 UTC (LLM mode) and synthesizes the past 7 days of cached tweets into themed prose + links.
+
+### Cache Contract
+
+Daily script writes to: `/opt/data/cache/xdigest/YYYY/MM/DD/`
+- `tweets-raw.txt` — full tweet text with engagement metrics
+- `tweets-links.txt` — `@handle: URL` pairs for link section
+
+Weekly LLM job reads 7 days of cache, formats themed digest, then caches the formatted output:
+```bash
+python3 /opt/data/scripts/digest-cache-write xdigest YYYY-MM-DD
+```
+This writes `/opt/data/cache/xdigest/YYYY/MM/DD/formatted-digest.txt`.
 
 ## Pitfalls
 

@@ -356,6 +356,18 @@ After displaying papers, add all newly-shown papers to `shown_papers` with today
 ### Step 4: Prune stale entries
 Remove cache entries older than 30 days to keep the file small.
 
+## Output Caching (MANDATORY for cron jobs)
+
+After formatting a digest, save it to cache for weekly/monthly aggregation and jargon prevalence scanning:
+
+```bash
+# Pipe the formatted digest text to the shared cache writer
+python3 /opt/data/scripts/digest-cache-write arxiv $(date +%Y-%m-%d)
+```
+
+This writes atomically to `/opt/data/cache/arxiv/YYYY/MM/DD/formatted-digest.txt`.
+Cache is valid for 30 days. After 30 days, re-fetch.
+
 ## Notes
 
 - arXiv returns Atom XML — use the helper script or parsing snippet for clean output
