@@ -1,0 +1,11 @@
+{
+  "skills": [
+    {
+      "skill": "car_tracker",
+      "last_change": "2026-07-27",
+      "spec": "references/validation-spec.md",
+      "last_validated": null,
+      "last_result": null
+    }
+  ]
+}
