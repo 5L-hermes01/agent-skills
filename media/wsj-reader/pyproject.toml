@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "wsj-reader"
 version = "0.1.0"
-description = "Read Wall Street Journal print-edition headlines, articles, and narrated MP3s using the user's authenticated session. JSON output for agent consumption."
+description = "Read Wall Street Journal homepage headlines without cookies, plus articles and narrated MP3s using the user's authenticated session when needed. JSON output for agent consumption."
 license = {text = "Apache-2.0"}
 authors = [{name = "Nick Lange"}]
 requires-python = ">=3.10"
@@ -15,6 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+browser = ["playwright>=1.46"]
 dev = ["pytest>=7", "responses>=0.24"]
 
 [project.scripts]

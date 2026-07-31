@@ -70,10 +70,7 @@ class BaseClient:
         self._fetch_count = 0
         self._last_origin_fetch_at: float = 0.0
 
-    # -- subclass hooks --------------------------------------------------
 
-    def _headers(self) -> dict:
-        return {"User-Agent": self.user_agent, "Accept": "application/json"}
 
     # -- internal --------------------------------------------------------
 
@@ -106,25 +103,33 @@ class BaseClient:
 
     # -- public ---------------------------------------------------------
 
-    def get_json(
+    def _request(
         self,
         url: str,
-        *,
+        method: str = "GET",
         headers: Optional[dict] = None,
         space: bool = True,
-    ) -> Any:
+        timeout: int = 30,
+        binary: bool = False,
+    ) -> requests.Response:
+        if not url.lower().startswith(("http://", "https://")):
+            raise ValueError(f"Invalid URL scheme: {url}")
         self._check_budget()
         if space:
             self._space()
-        backoff = 1.0
+
         h = headers if headers is not None else self._headers()
+        backoff = 1.0
+
         for attempt in range(4):
             try:
-                r = self.session.get(url, headers=h, timeout=30)
+                r = self.session.request(method, url, headers=h, timeout=timeout)  # nosec B310
             except requests.RequestException as e:
                 raise self._Upstream(f"network error for {url}: {e}") from e
+
             self._fetch_count += 1
             self._last_origin_fetch_at = time.time()
+
             if r.status_code in (429, 503):
                 retry_after = r.headers.get("Retry-After")
                 wait = (
@@ -141,12 +146,24 @@ class BaseClient:
                 time.sleep(wait)
                 backoff = min(backoff * 2, 30.0)
                 continue
+
             self._raise_for_status(r, url)
-            try:
-                return r.json()
-            except ValueError as e:
-                raise self._Upstream(f"non-JSON response from {url}: {e}") from e
+            return r
+
         raise self._Upstream(f"exhausted retries for {url}")
+
+    def get_json(
+        self,
+        url: str,
+        *,
+        headers: Optional[dict] = None,
+        space: bool = True,
+    ) -> Any:
+        r = self._request(url, headers=headers, space=space)
+        try:
+            return r.json()
+        except ValueError as e:
+            raise self._Upstream(f"non-JSON response from {url}: {e}") from e
 
     def get_bytes(
         self,
@@ -155,15 +172,35 @@ class BaseClient:
         headers: Optional[dict] = None,
         space: bool = True,
     ) -> bytes:
-        self._check_budget()
-        if space:
-            self._space()
-        h = headers if headers is not None else {"User-Agent": self.user_agent}
-        try:
-            r = self.session.get(url, headers=h, timeout=60)
-        except requests.RequestException as e:
-            raise self._Upstream(f"network error for {url}: {e}") from e
-        self._fetch_count += 1
-        self._last_origin_fetch_at = time.time()
-        self._raise_for_status(r, url)
+        r = self._request(url, headers=headers, space=space, timeout=60)
         return r.content
+
+
+class CookieAuthMixin:
+    """Mixin to handle cookie-based authentication for readers."""
+
+    REQUIRED_COOKIES: list[str] = []
+
+    def _build_cookie_header(self) -> str:
+        cookies = {}
+        for name in self.REQUIRED_COOKIES:
+            val = os.environ.get(f"{self.SOURCE}_{name}")
+            if not val:
+                raise self._SessionExpired(
+                    f"Missing required cookie {name} for {self.SOURCE}. "
+                    f"Set {self.SOURCE}_{name} in environment."
+                )
+            cookies[name] = val
+        return "; ".join([f"{k}={v}" for k, v in cookies.items()])
+
+    @property
+    def cookie_header(self) -> str:
+        """Public property to trigger cookie validation lazily."""
+        return self._build_cookie_header()
+
+    def _headers(self) -> dict:
+        h = {"User-Agent": self.user_agent, "Accept": "application/json"}
+        cookie_str = self._build_cookie_header()
+        if cookie_str:
+            h["Cookie"] = cookie_str
+        return h

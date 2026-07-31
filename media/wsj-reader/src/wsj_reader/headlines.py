@@ -1,12 +1,17 @@
-"""WSJ headlines — two transports.
+"""WSJ headlines — three transports.
 
-* `via="graphql"` (default): hits shared-data.dowjones.io/gateway/graphql with
-  a persisted `summaryCollectionContent` query. Cookie required since mid-2026.
+* `via="homepage"` (default): fetches https://www.wsj.com/ without cookies and
+  extracts the embedded Next.js homepage data. This is the sustainable
+  morning/front-page headline path.
+* `via="graphql"`: hits shared-data.dowjones.io/gateway/graphql with a
+  persisted `summaryCollectionContent` query for named collections such as
+  most-popular. Cookie required since mid-2026, so this is no longer the
+  default headline source.
 * `via="html"` (legacy): scrapes the print-edition HTML at
   /print-edition/{YYYYMMDD}/frontpage. Body-rich but subject to Datadome
   bot protection and the 24h cookie cycle.
 
-Both transports normalize to the same article schema so downstream code
+All transports normalize to the same article schema so downstream code
 (data_as_podcasts, agents) doesn't care which path produced the data.
 """
 from __future__ import annotations
@@ -44,7 +49,7 @@ DEFAULT_COLLECTION = "MOST-POP-WSJ-NO-OPN_1"
 
 def get_headlines(
     *,
-    via: str = "graphql",
+    via: str = "homepage",
     edition_date: Optional[str] = None,
     section: Optional[str] = None,
     collection: Optional[str] = None,
@@ -58,13 +63,28 @@ def get_headlines(
     """Top-level headlines dispatcher.
 
     Args:
-      via: "graphql" (default, no auth) or "html" (print-edition scraper).
+      via: "homepage" (default, no auth), "graphql", or "html".
       edition_date: HTML mode only. YYYYMMDD.
       section: HTML mode only. Filter to one section.
       collection: GraphQL mode only. Friendly name or raw collection ID.
       audio_only: GraphQL mode only. Drop items whose read-to-me returns nothing.
       limit: max articles to return.
     """
+    if via == "homepage":
+        if collection:
+            raise ValueError("collection is only supported with via='graphql'")
+        if edition_date:
+            raise ValueError("edition_date is only supported with via='html'")
+        if section:
+            raise ValueError("section is only supported with via='html'")
+        if audio_only:
+            raise ValueError("audio_only is only supported with via='graphql'")
+        return _get_headlines_via_homepage(
+            limit=limit,
+            client=client,
+            cache=cache,
+            no_cache=no_cache,
+        )
     if via == "graphql":
         return _get_headlines_via_graphql(
             collection=collection,
@@ -75,6 +95,10 @@ def get_headlines(
             no_cache=no_cache,
         )
     if via == "html":
+        if collection:
+            raise ValueError("collection is only supported with via='graphql'")
+        if audio_only:
+            raise ValueError("audio_only is only supported with via='graphql'")
         return _get_headlines_via_html(
             edition_date=edition_date,
             section=section,
@@ -84,7 +108,122 @@ def get_headlines(
             no_cache=no_cache,
             max_days_back=max_days_back,
         )
-    raise ValueError(f"unknown via={via!r}; expected 'graphql' or 'html'")
+    raise ValueError(f"unknown via={via!r}; expected 'homepage', 'graphql', or 'html'")
+
+
+# ─── Homepage path ───────────────────────────────────────────────────────
+
+HOMEPAGE_KEYS = (
+    ("front", "leadCollections"),
+    ("features", "featureCollections"),
+    ("more", "miscellaneousCollections"),
+    ("popular", "mostPopularData"),
+)
+
+
+def _get_headlines_via_homepage(
+    *,
+    limit: int,
+    client: Optional[WSJClient],
+    cache: Optional[Cache],
+    no_cache: bool,
+) -> dict:
+    client = client or WSJClient()
+    cache = cache or Cache()
+    url = f"{WSJClient.BASE}/"
+    payload = None if no_cache else cache.get_json("GET", url, TTL_HEADLINES)
+    if payload is None:
+        html = client.get_public_html(url, space=False)
+        payload = extract_next_data(html, url=url)
+        if not no_cache:
+            cache.set_json("GET", url, payload)
+
+    out = _homepage_articles(payload, limit=limit)
+
+    return {
+        "schema_version": 1,
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "via": "homepage",
+        "collection_id": None,
+        "edition_date": None,
+        "articles": out,
+    }
+
+
+def _homepage_articles(payload: dict, *, limit: int) -> list[dict]:
+    pp = page_props(payload)
+    out: list[dict] = []
+    seen: set[str] = set()
+    for section_id, pp_key in HOMEPAGE_KEYS:
+        for item in _walk_dicts(pp.get(pp_key)):
+            article = _normalize_homepage_item(item, section_id)
+            if not article:
+                continue
+            dedupe_key = article["url"].split("?", 1)[0]
+            if dedupe_key in seen:
+                continue
+            seen.add(dedupe_key)
+            out.append(article)
+            if limit > 0 and len(out) >= limit:
+                return out
+    return out
+
+
+def _normalize_homepage_item(item: dict, section_id: str) -> Optional[dict]:
+    url = item.get("articleUrl") or item.get("url")
+    headline = item.get("headline") or item.get("title")
+    if not url or not headline:
+        return None
+    if not (
+        item.get("articleUrl")
+        or item.get("seoId")
+        or item.get("id")
+        or item.get("summary")
+    ):
+        return None
+    article_id = item.get("id")
+    return {
+        "url": url,
+        "article_id": article_id if isinstance(article_id, str) else None,
+        "headline": headline,
+        "summary": item.get("summary") or item.get("flashline"),
+        "section": section_id,
+        "flashline": item.get("flashline"),
+        "published": item.get("timestamp") or item.get("publishedDateTimeUtc"),
+        "image_url": item.get("imageUrl"),
+        "image_alt": item.get("imageAlt"),
+        "byline": _homepage_byline(item),
+        "breaking_news": bool(item.get("isBreaking") or item.get("breakingNews")),
+    }
+
+
+def _homepage_byline(item: dict) -> Optional[str]:
+    byline = item.get("authorByline")
+    if isinstance(byline, list):
+        text = "".join(part.get("text", "") for part in byline if isinstance(part, dict))
+        text = " ".join(text.split())
+        if text:
+            return text
+    authors = item.get("authors")
+    if isinstance(authors, list):
+        names = [
+            author.get("name")
+            for author in authors
+            if isinstance(author, dict) and author.get("name")
+        ]
+        if names:
+            return ", ".join(names)
+    return None
+
+
+def _walk_dicts(value):
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from _walk_dicts(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _walk_dicts(child)
 
 
 # ─── GraphQL path ────────────────────────────────────────────────────────

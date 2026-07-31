@@ -1,8 +1,83 @@
 import re
 
+import pytest
 import responses
 
 from wsj_reader.headlines import get_headlines
+
+
+# ─── Homepage transport (default, no auth) ───────────────────────────────
+
+
+@responses.activate
+def test_headlines_homepage_default_works_without_cookie(monkeypatch, tmp_path, fx):
+    monkeypatch.setenv("WSJ_CACHE_DIR", str(tmp_path))
+    monkeypatch.delenv("WSJ_COOKIE", raising=False)
+    responses.add(
+        responses.GET,
+        "https://www.wsj.com/",
+        body=fx("homepage.html"),
+        status=200,
+        content_type="text/html",
+    )
+    out = get_headlines(limit=10)
+    assert out["schema_version"] == 1
+    assert out["via"] == "homepage"
+    assert out["collection_id"] is None
+    assert out["edition_date"] is None
+    assert [a["headline"] for a in out["articles"]] == [
+        "Synthetic homepage lead story",
+        "Synthetic homepage second story",
+        "Synthetic homepage feature",
+    ]
+    assert out["articles"][0]["section"] == "front"
+    assert out["articles"][0]["byline"] == "Home Reporter"
+    assert out["articles"][1]["byline"] == "By Second Reporter"
+    assert "Cookie" not in responses.calls[0].request.headers
+
+
+@responses.activate
+def test_headlines_homepage_limit_and_dedupe(monkeypatch, tmp_path, fx):
+    monkeypatch.setenv("WSJ_CACHE_DIR", str(tmp_path))
+    monkeypatch.delenv("WSJ_COOKIE", raising=False)
+    responses.add(
+        responses.GET,
+        "https://www.wsj.com/",
+        body=fx("homepage.html"),
+        status=200,
+        content_type="text/html",
+    )
+    out = get_headlines(limit=2)
+    assert [a["headline"] for a in out["articles"]] == [
+        "Synthetic homepage lead story",
+        "Synthetic homepage second story",
+    ]
+
+
+@responses.activate
+def test_headlines_homepage_no_cache_does_not_write(monkeypatch, tmp_path, fx):
+    monkeypatch.setenv("WSJ_CACHE_DIR", str(tmp_path))
+    monkeypatch.delenv("WSJ_COOKIE", raising=False)
+    responses.add(
+        responses.GET,
+        "https://www.wsj.com/",
+        body=fx("homepage.html"),
+        status=200,
+        content_type="text/html",
+    )
+    out = get_headlines(limit=1, no_cache=True)
+    assert out["articles"][0]["headline"] == "Synthetic homepage lead story"
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_headlines_homepage_rejects_graphql_collection():
+    with pytest.raises(ValueError, match="collection is only supported with via='graphql'"):
+        get_headlines(collection="most-popular")
+
+
+def test_headlines_homepage_rejects_audio_only():
+    with pytest.raises(ValueError, match="audio_only is only supported with via='graphql'"):
+        get_headlines(audio_only=True)
 
 
 # ─── HTML transport (via="html") ─────────────────────────────────────────
@@ -58,7 +133,7 @@ def test_headlines_html_walks_back_when_no_articles(fake_env, fx):
     assert len(out["articles"]) >= 1
 
 
-# ─── GraphQL transport (via="graphql", default) ──────────────────────────
+# ─── GraphQL transport (explicit collection mode) ────────────────────────
 
 
 def _graphql_payload(items):
@@ -92,7 +167,7 @@ def _gql_item(article_id, url, headline, summary="A short summary.",
 
 @responses.activate
 def test_headlines_graphql_default(fake_env, monkeypatch):
-    """GraphQL is the default. Items get inline audio resolved."""
+    """GraphQL collection mode still works when explicitly selected."""
     monkeypatch.setenv("WSJ_REQUEST_SPACING_MS", "100")
     # GraphQL response
     responses.add(
@@ -128,7 +203,7 @@ def test_headlines_graphql_default(fake_env, monkeypatch):
         adding_headers={"Content-Range": f"bytes 0-7/{240 * 128_000 // 8}",
                          "Content-Type": "audio/mpeg"},
     )
-    out = get_headlines(limit=5)
+    out = get_headlines(via="graphql", limit=5)
     assert out["schema_version"] == 1
     assert out["via"] == "graphql"
     assert out["collection_id"] == "MOST-POP-WSJ-NO-OPN_1"
@@ -187,7 +262,7 @@ def test_headlines_graphql_audio_only_filters(fake_env, monkeypatch):
         adding_headers={"Content-Range": f"bytes 0-7/{100 * 128_000 // 8}",
                          "Content-Type": "audio/mpeg"},
     )
-    out = get_headlines(audio_only=True, limit=5)
+    out = get_headlines(via="graphql", audio_only=True, limit=5)
     assert len(out["articles"]) == 1
     assert out["articles"][0]["article_id"] == "WP-WSJ-0000000004"
 
@@ -208,17 +283,17 @@ def test_headlines_graphql_alias_resolves_to_canonical(fake_env, monkeypatch):
         re.compile(r"https://shared-data\.dowjones\.io/gateway/graphql.*"),
         callback=gql_cb,
     )
-    out = get_headlines(collection="most-popular", limit=5)
+    out = get_headlines(via="graphql", collection="most-popular", limit=5)
     assert "MOST-POP-WSJ-NO-OPN_1" in captured["url"]
     assert out["collection_id"] == "MOST-POP-WSJ-NO-OPN_1"
     assert out["articles"] == []
 
 
 @responses.activate
-def test_headlines_graphql_works_without_cookie(monkeypatch, tmp_path):
-    """The marquee win: WSJ_COOKIE is not required for GraphQL."""
+def test_headlines_graphql_sends_cookie(monkeypatch, tmp_path):
+    """GraphQL transport now requires and sends WSJ_COOKIE."""
     monkeypatch.setenv("WSJ_CACHE_DIR", str(tmp_path))
-    monkeypatch.delenv("WSJ_COOKIE", raising=False)
+    monkeypatch.setenv("WSJ_COOKIE", "session_token=abc")
     monkeypatch.setenv("WSJ_REQUEST_SPACING_MS", "100")
     responses.add(
         responses.GET,
@@ -226,6 +301,6 @@ def test_headlines_graphql_works_without_cookie(monkeypatch, tmp_path):
         json=_graphql_payload([]),
         status=200,
     )
-    out = get_headlines()
+    out = get_headlines(via="graphql")
     assert out["via"] == "graphql"
     assert out["articles"] == []

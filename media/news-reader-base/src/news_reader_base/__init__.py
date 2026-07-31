@@ -1,7 +1,7 @@
 """Shared base for FT / NYT / WSJ reader skills."""
 from .cache import Cache
 from .cli import add_common_flags, emit, wrap
-from .client import BaseClient, DEFAULT_UA
+from .client import BaseClient, CookieAuthMixin, DEFAULT_UA
 from .dotenv import load_dotenv
 from .errors import (
     NotFoundError,
@@ -12,6 +12,7 @@ from .errors import (
 
 __all__ = [
     "BaseClient",
+    "CookieAuthMixin",
     "Cache",
     "DEFAULT_UA",
     "NotFoundError",

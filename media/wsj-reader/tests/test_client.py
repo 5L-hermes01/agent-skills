@@ -21,9 +21,35 @@ def test_get_html_sends_cookie_and_browser_headers(fake_env):
     assert req.headers["Referer"] == "https://www.wsj.com/"
 
 
+@responses.activate
+def test_get_public_html_does_not_require_or_send_cookie(monkeypatch, tmp_path):
+    monkeypatch.setenv("WSJ_CACHE_DIR", str(tmp_path))
+    monkeypatch.delenv("WSJ_COOKIE", raising=False)
+    url = "https://www.wsj.com/"
+    responses.add(responses.GET, url, body="<html>ok</html>", status=200)
+    body = WSJClient(env_loaded=True).get_public_html(url, space=False)
+    assert body == "<html>ok</html>"
+    req = responses.calls[0].request
+    assert "Cookie" not in req.headers
+    assert "Referer" not in req.headers
+    assert req.headers["Sec-Fetch-User"] == "?1"
+
+
+@responses.activate
+def test_get_public_html_401_is_not_cookie_expired(monkeypatch, tmp_path):
+    monkeypatch.setenv("WSJ_CACHE_DIR", str(tmp_path))
+    monkeypatch.delenv("WSJ_COOKIE", raising=False)
+    url = "https://www.wsj.com/"
+    responses.add(responses.GET, url, body="blocked", status=401)
+    with pytest.raises(UpstreamError, match="public homepage fetch returned 401"):
+        WSJClient(env_loaded=True).get_public_html(url, space=False)
+
+
 def test_missing_cookie_is_lazy_not_fatal_at_init(monkeypatch, tmp_path):
-    """WSJClient() now allows construction without WSJ_COOKIE — only the HTML
-    transport needs it. GraphQL works without."""
+    """WSJClient() allows construction without WSJ_COOKIE.
+
+    Only cookie-bound transports should touch cookie_header.
+    """
     monkeypatch.setenv("WSJ_CACHE_DIR", str(tmp_path))
     monkeypatch.delenv("WSJ_COOKIE", raising=False)
     # Constructor must not raise.
@@ -34,10 +60,10 @@ def test_missing_cookie_is_lazy_not_fatal_at_init(monkeypatch, tmp_path):
 
 
 @responses.activate
-def test_graphql_get_sends_apollo_headers_no_cookie(monkeypatch, tmp_path):
-    """GraphQL transport must not require WSJ_COOKIE."""
+def test_graphql_get_sends_apollo_headers_with_cookie(monkeypatch, tmp_path):
+    """GraphQL transport now requires and sends WSJ_COOKIE since mid-2026."""
     monkeypatch.setenv("WSJ_CACHE_DIR", str(tmp_path))
-    monkeypatch.delenv("WSJ_COOKIE", raising=False)
+    monkeypatch.setenv("WSJ_COOKIE", "session_token=xyz")
     monkeypatch.setenv("WSJ_REQUEST_SPACING_MS", "100")
     responses.add(
         responses.GET,
@@ -50,8 +76,8 @@ def test_graphql_get_sends_apollo_headers_no_cookie(monkeypatch, tmp_path):
     req = responses.calls[0].request
     assert req.headers["apollographql-client-name"] == "wsj-generator-olympia"
     assert req.headers["apollographql-client-version"] == "article"
-    # No Cookie header at all.
-    assert "Cookie" not in req.headers
+    # Cookie header must be present.
+    assert req.headers["Cookie"] == "session_token=xyz"
     # The persisted-query envelope landed in the URL.
     assert "persistedQuery" in req.url
     assert "deadbeef" in req.url

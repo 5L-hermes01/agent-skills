@@ -104,10 +104,9 @@ low-priority or skip if the channel has sufficient other content.
 
 ### Step 3: Update cache
 After displaying papers, add all newly-shown papers to `shown_papers` with
-today's date. Write to BOTH locations:
+today's date. Write to the consumption directory only:
 ```
-/opt/data/repos/agent-skills/research/arxiv/references/shown_papers.json (git repo, primary)
-/opt/data/skills/research/arxiv/references/shown_papers.json (consumption dir)
+/opt/data/skills/research/arxiv/references/shown_papers.json
 ```
 
 ### Step 4: Prune stale entries

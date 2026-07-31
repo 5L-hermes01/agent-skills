@@ -1,32 +1,33 @@
 ---
 name: wsj-reader
-description: Read Wall Street Journal print-edition headlines, articles, and the publisher-narrated MP3s ("read-to-me") using the user's authenticated browser session. Emits structured JSON for downstream skills. 30-day article/audio cache, 1-hour cache for headlines.
+description: Read Wall Street Journal homepage headlines without cookies, plus articles and publisher-narrated MP3s ("read-to-me") using the user's authenticated browser session when needed. Emits structured JSON for downstream skills. 30-day article/audio cache, 1-hour cache for headlines.
 version: 0.2.0
 author: Nick Lange
 license: Apache-2.0
 metadata:
   hermes:
     tags: [wsj, wall-street-journal, news, audio, read-to-me, json, agent-cli]
-    required_environment_variables: [WSJ_COOKIE]
+    required_environment_variables: []
     required_commands: [python, wsj]
 ---
 
 # wsj-reader
 
-Programmatic WSJ access via the user's logged-in session cookies. Exposes three CLI commands; all emit JSON for consumption by other agents/skills.
+Programmatic WSJ access. Homepage headlines are public and cookie-free; article bodies and URL-based audio resolution use the user's logged-in session cookies. Exposes three CLI commands; all emit JSON for consumption by other agents/skills.
 
 ## When to Use — natural-language → command
 
 | User says… | Run |
 |---|---|
-| "today's WSJ", "WSJ print edition headlines", "what's on the front page" | `wsj headlines` |
-| "WSJ business section today" | `wsj headlines --section business` |
+| "today's WSJ", "what's on the front page" | `wsj headlines` |
+| "WSJ print edition headlines" | `wsj headlines --via=html` |
+| "WSJ business section today" | `wsj headlines --via=html --section business` |
 | "read the WSJ article at <url>" | `wsj article <url>` |
 | "download the WSJ audio for this story" | `wsj audio <url-or-WP-WSJ-id> --download` |
 
 ## Setup
 
-**One-time, by the human** (requires a browser):
+**One-time, by the human** for article/audio URL access (requires a browser):
 
 1. Sign in to https://www.wsj.com.
 2. DevTools → **Network** → click any `www.wsj.com` request → copy the full `Cookie:` header value.
@@ -42,14 +43,15 @@ Programmatic WSJ access via the user's logged-in session cookies. Exposes three 
 python3 -m pip install --user -e /path/to/agent-skills/media/wsj-reader
 ```
 
-When the skill prints `SESSION_EXPIRED` (exit code 2), repeat the cookie capture. WSJ's full Cookie header is required — no minimal subset works.
+When an authenticated command prints `SESSION_EXPIRED` (exit code 2), repeat the cookie capture. WSJ's full Cookie header is required for article extraction — no minimal subset works.
 
 ## Agent invocation
 
 ```bash
-wsj headlines                                 # most recent headlines (GraphQL)
-wsj headlines --date 20260608                 # specific date
-wsj headlines --section business --limit 5
+wsj headlines                                 # public homepage headlines, no cookie
+wsj headlines --via=html --date 20260608       # specific print-edition date, requires cookie
+wsj headlines --via=html --section business --limit 5
+wsj headlines --via=graphql --collection most-popular --limit 5
 wsj article https://www.wsj.com/finance/...html
 wsj audio https://www.wsj.com/finance/...html --download
 wsj audio WP-WSJ-0003640310 --download        # bypass the article fetch

@@ -1,5 +1,0 @@
-{
-  "blocked_terms": [],
-  "updated": "2026-07-24T04:05:02Z",
-  "note": "Terms the user has said they already know. Excluded from jargon-notify Discord posts, popularity reports, and inline jargon in digests. Data still counted internally. Add by appending the term to blocked_terms and updating 'updated'."
-}

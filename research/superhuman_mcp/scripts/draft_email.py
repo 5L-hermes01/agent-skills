@@ -36,6 +36,11 @@ def call_mcp_tool(url, auth, tool_name, arguments):
     if not url.lower().startswith(("http://", "https://")):
         raise ValueError(f"Invalid URL scheme: {url}")
 
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if auth and parsed.scheme == "http" and parsed.hostname not in ("localhost", "127.0.0.1", "::1"):
+        raise ValueError("Unencrypted transmission: credentials cannot be sent over HTTP to a remote host. Use HTTPS.")
+
     headers = {
         "Content-Type": "application/json",
         "MCP-Protocol-Version": "2025-06-18",

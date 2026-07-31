@@ -37,6 +37,11 @@ def call_mcp_tool(url, password, tool_name, arguments, insecure=False):
     if not url.lower().startswith(("http://", "https://")):
         raise ValueError(f"Invalid URL scheme: {url}")
 
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if password and parsed.scheme == "http" and parsed.hostname not in ("localhost", "127.0.0.1", "::1") and not insecure:
+        raise ValueError("Unencrypted transmission: credentials cannot be sent over HTTP to a remote host. Use HTTPS or pass --insecure.")
+
     # Setup SSL Context based on --insecure CLI argument
     if insecure:
         ctx = ssl.create_default_context()

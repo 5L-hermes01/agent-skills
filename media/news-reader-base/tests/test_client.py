@@ -79,6 +79,9 @@ def test_concrete_exception_subclasses_propagate():
     class _C(BaseClient):
         SOURCE = "FT"
 
+        def _headers(self) -> dict:
+            return {}
+
     c = _C(session_expired_cls=_FTExpired)
     with responses.RequestsMock() as r:
         r.get("https://api.test/x", status=401)

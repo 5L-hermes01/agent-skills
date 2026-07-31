@@ -192,3 +192,19 @@ def test_audio_probe_caches_result(fake_env, fx, tmp_cache_dir):
     assert out1["remote_url"] == out2["remote_url"]
     # Zero new CDN probes on the second call.
     assert n_after == n_before
+
+
+@responses.activate
+def test_audio_no_cache_does_not_write_resolver_or_probe_cache(fake_env, fx, tmp_cache_dir):
+    responses.add(
+        responses.GET,
+        re.compile(r"https://video-api\.shdsvc\.dowjones\.io/.*"),
+        json=fx("read_to_me.json"), status=200,
+    )
+    _mock_cdn_probe(CANONICAL_URL, total_bytes=CANONICAL_TOTAL)
+
+    out = get_audio("WP-WSJ-0000000001", download=False, no_cache=True)
+
+    assert out["available"] is True
+    assert out["remote_url"] == CANONICAL_URL
+    assert list(tmp_cache_dir.iterdir()) == []

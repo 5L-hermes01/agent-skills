@@ -59,8 +59,9 @@ def resolve_audio_for_id(
 ) -> dict:
     """Resolve audio metadata + constructed MP3 URL from just a WP-WSJ-* id.
 
-    No HTML fetch, no Cookie required. Used by both `get_audio()` and the
-    GraphQL headlines path, so we keep the construction logic in one place.
+    No HTML fetch when the caller already has an id, but the metadata resolver
+    uses WSJ's cookie-bound JSON transport. Headline paths can already have a
+    WP-WSJ id, so we keep the construction logic in one place.
 
     Returns dict with: article_id, available, remote_url, duration, byline,
     audio_uuid. Caller may add download/local_path.
@@ -75,7 +76,8 @@ def resolve_audio_for_id(
     payload = None if no_cache else cache.get_json("GET", resolve_url, TTL_AUDIO_RESOLVE)
     if payload is None:
         payload = client.get_json(resolve_url, referer=article_url)
-        cache.set_json("GET", resolve_url, payload)
+        if not no_cache:
+            cache.set_json("GET", resolve_url, payload)
 
     items = payload.get("items") or []
     out = {
@@ -296,7 +298,8 @@ def _probe_cdn(
             break
 
     resolved = found_url or (best_match[0] if best_match else "")
-    cache.set_json("GET", cache_key, resolved)
+    if not no_cache:
+        cache.set_json("GET", cache_key, resolved)
     if not resolved:
         logger.debug(
             "WSJ audio probe found nothing for %s on (%s, %s)",
@@ -309,6 +312,8 @@ def _probe_cdn(
 
 def _probe_one(client: WSJClient, url: str) -> tuple[int, Optional[int]]:
     """Range-request the first 8 bytes; return (status, total_size_or_None)."""
+    if not url.lower().startswith(("http://", "https://")):
+        raise ValueError(f"Invalid URL scheme: {url}")
     try:
         # Lean directly on requests so we can capture Content-Range without
         # going through our normal _raise_for_status path (which would treat
@@ -320,7 +325,7 @@ def _probe_one(client: WSJClient, url: str) -> tuple[int, Optional[int]]:
                 "Range": "bytes=0-7",
             },
             timeout=15,
-        )
+        )  # nosec B310
         client._fetch_count += 1
         if r.status_code == 206:
             cr = r.headers.get("Content-Range", "")

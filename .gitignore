@@ -22,6 +22,11 @@ venv/
 **/seen_listings.json
 **/benchmark_prices.json
 **/benchmark_price.json
+**/shown_papers.json
+**/posted-terms.json
+**/jargon-registry.json
+**/jargon-blocklist.json
+**/target_profiles.json
 **/cache/
 
 # Build artifacts
