@@ -1,13 +1,14 @@
 ---
 name: unified-digest-themes
-description: Canonical cross-platform theme taxonomy for all digest skills (HN Brief, X-Digest, AI-News, arXiv). Single source of truth — update here, propagate everywhere.
-version: 1.1.0
-author: Hermes Agent
+description: Canonical cross-platform theme taxonomy for all digest pipelines
+version: 1.2.0
+author: Hermes@5L-Labs.com (NJL)
 license: MIT
+platforms: [linux, macos]
 metadata:
   hermes:
-    tags: [themes, taxonomy, digest, cross-platform]
-    related_skills: [hn-brief-digest, x-digest, arxiv, jargon]
+    tags: [themes, taxonomy, digest, classification]
+    related_skills: [arxiv]
 ---
 
 # Unified Digest Theme System
