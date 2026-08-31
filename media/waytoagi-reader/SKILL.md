@@ -89,11 +89,24 @@ Feishu sends `Cache-Control: no-store` and no `ETag`/`Last-Modified`, so conditi
 
 ## Translation
 
-Out of scope for this skill by design. Compose with the sibling `translate` skill (`media/translate/`):
+Out of scope for the reader itself, but a batch translator ships at `scripts/waytoagi-translate.py` — it reads `--flatten` JSON on stdin, batch-translates every Chinese `title`/`summary` through a local OpenAI-compatible server (default `qwen3.8` on `http://192.168.100.10:11434`), and emits the same document with `title_en`/`summary_en` siblings. Filesystem translation cache makes re-runs near-instant.
 
 ```bash
-waytoagi update-log | translate --target en
+waytoagi update-log --flatten | waytoagi-translate.py --host http://192.168.100.10:11434 --model qwen3.8
+waytoagi update-log --flatten | waytoagi-translate.py --latest-day   # daily digest: only most recent day
 ```
+
+Env overrides: `WAYTOAGI_TRANSLATE_HOST`, `WAYTOAGI_TRANSLATE_MODEL`, `WAYTOAGI_TRANSLATE_CACHE` (default `$XDG_CACHE_HOME/waytoagi-translate`). `--no-cache` bypasses the cache. The sibling `translate` skill (`media/translate/`) also gained an `openai_compat` backend (set `TRANSLATE_BACKEND=openai_compat`, `TRANSLATE_OPENAI_HOST`, `TRANSLATE_OPENAI_MODEL`).
+
+### Full article content
+
+`scripts/waytoagi_content.py` fetches each linked article and translates its FULL body to English, preserving external (non-Feishu) hyperlinks as markdown `[label](url)`. Reads the translated `--flatten` JSON on stdin and adds `content_zh` / `content_en` to each item.
+
+```bash
+waytoagi update-log --flatten | waytoagi-translate.py ... | waytoagi_content.py --host http://192.168.100.10:11434 --model qwen3.8
+```
+
+External link note: the reader's default render drops `link` attribs (external URLs). `waytoagi_content.py` re-decodes them so they survive translation. Content + translation are cached by URL (`WAYTOAGI_CONTENT_CACHE`, default `$XDG_CACHE_HOME/waytoagi-content`); `--batch-chars` controls translation chunk size (default `WAYTOAGI_BATCH_CHARS` or 2000 source chars).
 
 ## Tests
 
