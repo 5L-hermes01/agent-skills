@@ -54,6 +54,8 @@ waytoagi update-log --emit-raw-blocks            # debugging: dump the full bloc
 
 - **Default (no flags)**: parses the "🎏 近 7 日更新日志" section of the main wiki page. ~7 days, grouped by day heading.
 - **`--archive`**: follows the "历史更新" mention link in the main doc to the archive (auto-discovered, not hardcoded). Renders all months / all days; each day item gets a `month` field. 500+ days indexed across the year+ archive.
+
+  **Archive coverage caveat**: Feishu's guest SSR only inlines nested block objects for a recent window of the archive doc (~the latest days). Older day headings reference child block ids that are absent from the payload entirely (client-side pagination), so those days render `items: []` and emit an accurate `[warn]` diagnostic — the content is not recoverable from the HTML, not a parser/encoding defect.
 - **`--flatten`**: collapses `days[]` into a single `items[]` list. Each item gains `day` and `day_heading_id` fields. Use this when piping into the sibling `translate` skill or any downstream consumer that wants a flat feed.
 
 Fallback if `waytoagi` is not on PATH: `python3 -m waytoagi_reader.cli update-log`.

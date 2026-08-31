@@ -54,20 +54,43 @@ def _render_day(blocks: dict, day_head_id: str) -> dict:
     head = blocks[day_head_id]
     heading_text = render_text(head).strip() or None
     items: list[dict] = []
-    for cid in block_children(head):
+    referenced = block_children(head)
+    missing = [cid for cid in referenced if cid not in blocks]
+    for cid in referenced:
         if cid not in blocks:
             continue
         item = _render_item(blocks, cid)
         if item["title"] or item["summary"] or item["type"] in {"image", "divider"}:
             items.append(item)
     if heading_text and not items:
-        # Surface (don't silently drop) old-format edge cases the user can act on —
-        # e.g. the 2025-05-22 archive entry that returns 0 renderable children.
-        print(
-            f"[warn] day heading {heading_text!r} ({day_head_id}) has 0 renderable children — "
-            "possible older Feishu encoding or stripped content",
-            file=sys.stderr,
-        )
+        # Distinguish genuine empties from upstream payload omissions so the
+        # operator isn't misled into chasing a phantom encoding bug. Feishu's
+        # guest SSR serializes nested block objects only for a recent window of
+        # the archive doc; older days reference child ids that are absent from
+        # the payload entirely (client-side pagination), so they can't render
+        # server-side no matter the parser.
+        if missing and len(missing) == len(referenced):
+            print(
+                f"[warn] day heading {heading_text!r} ({day_head_id}) references "
+                f"{len(missing)} child block(s) but NONE are present in the SSR payload — "
+                "Feishu omits nested blocks for this (older) part of the archive "
+                "(client-side pagination). Content is not recoverable from this HTML; "
+                "run with --emit-raw-blocks and confirm the ids are referenced but absent.",
+                file=sys.stderr,
+            )
+        elif missing:
+            print(
+                f"[warn] day heading {heading_text!r} ({day_head_id}) has {len(missing)} "
+                f"of {len(referenced)} child block(s) absent from the SSR payload, and the "
+                "remaining present blocks rendered no items.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"[warn] day heading {heading_text!r} ({day_head_id}) has 0 child blocks "
+                "in the SSR payload.",
+                file=sys.stderr,
+            )
     return {
         "heading_id": day_head_id,
         "heading": heading_text,
