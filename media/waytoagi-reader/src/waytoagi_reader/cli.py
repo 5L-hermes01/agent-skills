@@ -50,7 +50,7 @@ def _cmd_update_log(args) -> int:
         print("[err] no blocks parsed — SSR contract may have changed", file=sys.stderr)
         return EXIT_UPSTREAM_CONTRACT
 
-    if args.emit_raw_blocks:
+    if args.emit_raw_blocks and not args.archive:
         json.dump(main_blocks, sys.stdout, ensure_ascii=False, indent=2)
         return EXIT_OK
 
@@ -60,6 +60,12 @@ def _cmd_update_log(args) -> int:
             print(f"[err] could not find a {ARCHIVE_NEEDLE!r} mention in the main doc", file=sys.stderr)
             return EXIT_NOT_FOUND
         archive_blocks = _fetch_and_extract(archive_url, cache_mode)
+        if not archive_blocks:
+            print("[err] no archive blocks parsed", file=sys.stderr)
+            return EXIT_UPSTREAM_CONTRACT
+        if args.emit_raw_blocks:
+            json.dump(archive_blocks, sys.stdout, ensure_ascii=False, indent=2)
+            return EXIT_OK
         out = archive.render(archive_blocks, source_url=archive_url)
     else:
         out = render(main_blocks, heading=args.heading, source_url=args.url, fuzzy=args.fuzzy)
@@ -73,6 +79,9 @@ def _cmd_update_log(args) -> int:
 
     if args.date:
         out["days"] = [d for d in out["days"] if d.get("heading") and args.date in d["heading"]]
+    if any(day.get("missing_child_ids") for day in out["days"]):
+        print("[err] retained days reference absent blocks — refusing incomplete output", file=sys.stderr)
+        return EXIT_UPSTREAM_CONTRACT
     if args.flatten:
         items = []
         for d in out["days"]:
