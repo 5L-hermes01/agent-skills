@@ -195,3 +195,50 @@ def test_render_text_renders_mentions_as_book_quotes():
     # The mention run consumes 1 char of placeholder text; the remaining 8 chars
     # are the plain summary. No extra space is introduced.
     assert render_text(SYNTH_BLOCKS["i_one"]) == "《Synth Title 1》summary1"
+
+
+def test_render_day_missing_children_diagnostic(capsys):
+    """A day heading whose children ids are absent from the payload must emit an
+    accurate 'absent from SSR payload' warning, not the old misleading
+    'possible older Feishu encoding' message. Synthetic fixture reproduces the
+    real archive case (day references child ids that don't exist in the tree)."""
+    from waytoagi_reader.update_log import _render_day
+
+    blocks = {
+        "d": {"id": "d", "data": {
+            "type": "heading3", "parent_id": "root",
+            "children": ["missing_1", "missing_2", "missing_3"],
+            "text": {"apool": {"numToAttrib": {}},
+                     "initialAttributedTexts": {"attribs": {"0": "+8"}, "text": {"0": "1 月 1 日"}}},
+        }},
+    }
+    out = _render_day(blocks, "d")
+    assert out["items"] == []
+    err = capsys.readouterr().err
+    assert "NONE are present in the SSR payload" in err
+    assert "possible older Feishu encoding" not in err
+
+
+def test_render_day_partial_missing_children_diagnostic(capsys):
+    """Mixed case: some children present, some absent, and the present ones
+    render nothing — warn with the partial-absence message."""
+    from waytoagi_reader.update_log import _render_day
+
+    blocks = {
+        "d": {"id": "d", "data": {
+            "type": "heading3", "parent_id": "root",
+            "children": ["missing_1", "present_empty"],
+            "text": {"apool": {"numToAttrib": {}},
+                     "initialAttributedTexts": {"attribs": {"0": "+8"}, "text": {"0": "1 月 2 日"}}},
+        }},
+        "present_empty": {"id": "present_empty", "data": {
+            "type": "bullet", "parent_id": "d", "children": [],
+            "text": {"apool": {"numToAttrib": {}},
+                     "initialAttributedTexts": {"attribs": {"0": "+0"}, "text": {"0": ""}}},
+        }},
+    }
+    out = _render_day(blocks, "d")
+    assert out["items"] == []
+    err = capsys.readouterr().err
+    assert "1 of 2 child block(s) absent from the SSR payload" in err
+    assert "possible older Feishu encoding" not in err

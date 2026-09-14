@@ -22,44 +22,51 @@ def get_distance(lat2, lon2):
     return R * c * 1.18
 
 def extract_color(car):
-    """Best-effort extraction of paint color from listing properties, URL, and VDP HTML."""
-    # 1. Check direct listing attributes first
-    for k in ["exterior_color", "exteriorColor", "color", "paint"]:
-        val = car.get(k)
-        if val and isinstance(val, str) and val.strip() and val.strip().upper() != "TBD":
-            return val.strip()
-            
+    """Best-effort extraction from listing attributes, URL, and VDP HTML."""
+    for key in ("exterior_color", "exteriorColor", "color", "paint"):
+        value = car.get(key)
+        if isinstance(value, str) and value.strip() and value.strip().upper() != "TBD":
+            return value.strip()
     vdp_url = car.get("vdp_url") or car.get("vdpUrl") or ""
-    trim = car.get("trim") or ""
-    desc = car.get("description") or car.get("title") or car.get("name") or ""
-    text = f"{vdp_url} {trim} {desc}".lower()
+    description = car.get("description") or car.get("title") or car.get("name") or ""
+    text = f"{vdp_url} {car.get('trim') or ''} {description}".lower()
     
     color_map = {
-        "storm cloud": "Storm Cloud",
-        "storm-cloud": "Storm Cloud",
         "wind chill": "Wind Chill Pearl",
         "wind-chill": "Wind Chill Pearl",
-        "nightfall": "Nightfall Mica",
-        "nightfall-mica": "Nightfall Mica",
         "cloudburst": "Cloudburst Gray",
-        "cloudburst-gray": "Cloudburst Gray",
+        "caviar": "Caviar Black",
+        "eminent white": "Eminent White Pearl",
+        "eminent-white": "Eminent White Pearl",
+        "nightfall": "Nightfall Mica",
         "heavy metal": "Heavy Metal",
         "heavy-metal": "Heavy Metal",
         "diamond black": "Diamond Black",
         "diamond-black": "Diamond Black",
-        "bright white": "Bright White",
-        "bright-white": "Bright White",
         "baltic gray": "Baltic Gray",
         "baltic-gray": "Baltic Gray",
-        "fathom blue": "Fathom Blue",
-        "fathom-blue": "Fathom Blue",
-        "velvet red": "Velvet Red",
-        "velvet-red": "Velvet Red",
-        "caviar": "Caviar",
         "cement": "Cement",
-        "blueprint": "Blueprint",
         "incognito": "Incognito",
         "iridium": "Iridium",
+        "blueprint": "Blueprint Blue",
+        "supersonic red": "Supersonic Red",
+        "supersonic-red": "Supersonic Red",
+        "velvet red": "Velvet Red Pearl",
+        "velvet-red": "Velvet Red Pearl",
+        "fathom blue": "Fathom Blue Pearl",
+        "fathom-blue": "Fathom Blue Pearl",
+        "bright white": "Bright White Clearcoat",
+        "bright-white": "Bright White Clearcoat",
+        "granite crystal": "Granite Crystal Metallic",
+        "granite-crystal": "Granite Crystal Metallic",
+        "storm cloud": "Storm Cloud Gray",
+        "storm-cloud": "Storm Cloud Gray",
+        "silver sterling": "Silver Sterling Metallic",
+        "silver-sterling": "Silver Sterling Metallic",
+        "celestial silver": "Celestial Silver Metallic",
+        "celestial-silver": "Celestial Silver Metallic",
+        "midnight black": "Midnight Black Metallic",
+        "midnight-black": "Midnight Black Metallic",
         "supersonic": "Supersonic Red",
         "supersonicred": "Supersonic Red",
         "white": "White",
@@ -75,20 +82,18 @@ def extract_color(car):
     for key, val in color_map.items():
         if key in text:
             return val
-            
-    # 2. VDP HTML parsing fallback if URL is valid
-    if vdp_url and vdp_url.lower().startswith(("http://", "https://")):
+
+    if vdp_url.lower().startswith(("http://", "https://")):
         try:
-            headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:151.0) Gecko/20100101 Firefox/151.0"}
-            r = requests.get(vdp_url, headers=headers, timeout=3)  # nosec B310
-            if r.status_code == 200:
-                html = r.text.lower()
+            response = requests.get(vdp_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=3)
+            if response.status_code == 200:
+                html = response.text.lower()
                 for key, val in color_map.items():
                     if key in html:
                         return val
         except Exception:
             pass
-            
+
     return "TBD"
 
 # Global cache for listing details
@@ -208,17 +213,28 @@ def get_msrp_info(car, api_key):
     return msrp
 
 def abbreviate_color(color_name):
-    if not color_name or color_name.strip().upper() == "TBD":
+    if not color_name:
         return "TBD"
-    import re
-    cleaned = re.sub(r'[^\w\s]', ' ', color_name)
-    words = [w.strip() for w in cleaned.split() if w.strip()]
-    if not words:
-        return "TBD"
-    if len(words) == 1:
-        return words[0][:6].capitalize()
-    else:
-        return "".join(w[:3].capitalize() for w in words)
+    c = color_name.upper().strip()
+    if "BLUE" in c:
+        return "Blue"
+    if "RED" in c or "RUBY" in c or "MATADOR" in c:
+        return "Red"
+    if "WIND CHILL" in c or "PEARL" in c:
+        return "Pearl"
+    if "BLACK" in c or "CAVIAR" in c:
+        return "Black"
+    if "SILVER" in c:
+        return "Silver"
+    if "STORM" in c:
+        return "Storm"
+    if "CEMENT" in c:
+        return "Cement"
+    if "GRAY" in c or "GREY" in c or "INCOGNITO" in c or "CLOUDBURST" in c:
+        return "Gray"
+    if "WHITE" in c:
+        return "White"
+    return color_name[:8]
 
 def get_features_summary(car, make, model, api_key):
     vin = car.get("vin")
@@ -258,7 +274,7 @@ def get_features_summary(car, make, model, api_key):
         if (not has_pano or not has_pvm or not has_capt) and vdp_url and vdp_url.lower().startswith(("http://", "https://")):
             try:
                 headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:151.0) Gecko/20100101 Firefox/151.0"}
-                r = requests.get(vdp_url, headers=headers, timeout=3)  # nosec B310
+                r = requests.get(vdp_url, headers=headers, timeout=3)
                 if r.status_code == 200:
                     html_text = r.text.upper()
                     if not has_pano: has_pano = any(kw in html_text for kw in pano_keywords)
@@ -288,7 +304,7 @@ def get_features_summary(car, make, model, api_key):
         if (not has_ml or not has_tech or not has_capt) and vdp_url and vdp_url.lower().startswith(("http://", "https://")):
             try:
                 headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:151.0) Gecko/20100101 Firefox/151.0"}
-                r = requests.get(vdp_url, headers=headers, timeout=3)  # nosec B310
+                r = requests.get(vdp_url, headers=headers, timeout=3)
                 if r.status_code == 200:
                     html_text = r.text.upper()
                     if not has_ml: has_ml = any(kw in html_text for kw in ml_keywords)
@@ -312,7 +328,7 @@ def get_features_summary(car, make, model, api_key):
         if not has_hk and vdp_url and vdp_url.lower().startswith(("http://", "https://")):
             try:
                 headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:151.0) Gecko/20100101 Firefox/151.0"}
-                r = requests.get(vdp_url, headers=headers, timeout=3)  # nosec B310
+                r = requests.get(vdp_url, headers=headers, timeout=3)
                 if r.status_code == 200:
                     html_text = r.text.upper()
                     has_hk = any(kw in html_text for kw in hk_keywords)
@@ -339,19 +355,17 @@ def car_matches_profile(car, make, model, trim, vin_prefix, req_keywords, requir
     car_vin = (car.get("vin") or "").upper()
     price = car.get("price")
     car_type = (car.get("inventory_type", car.get("inventoryType", "used")) or "used").lower()
-    car_year = car.get("year")
     
     if price is None or not car_vin:
         return False
 
-    # Model year matching
-    if target_year and car_year:
+    if target_year is not None:
         try:
-            if int(car_year) != int(target_year):
+            if int(car.get("year")) != int(target_year):
                 return False
         except (ValueError, TypeError):
-            pass
-        
+            return False
+
     # Powertrain matching
     if vin_prefix and len(car_vin) > 9:
         if make.lower() == "toyota" or make.lower() == "lexus":
@@ -450,9 +464,8 @@ def get_listings_for_trim(target, api_key, project_root):
     requires_hybrid = target.get("requires_hybrid")
     if requires_hybrid is None:
         requires_hybrid = "hybrid" in trim.lower()
-        
+
     target_year = target.get("year")
-        
     for car in listings:
         if car_matches_profile(car, make, model, trim, vin_prefix, req_keywords, requires_awd, requires_hybrid, target_year):
             lat = car.get("latitude")
@@ -477,7 +490,7 @@ def get_listings_for_trim(target, api_key, project_root):
                     if car_make.lower() != make.lower() or model.lower() not in car_model.lower():
                         continue
                         
-                    if car_matches_profile(car, make, model, trim, vin_prefix, req_keywords, requires_awd, requires_hybrid):
+                    if car_matches_profile(car, make, model, trim, vin_prefix, req_keywords, requires_awd, requires_hybrid, target_year):
                         lat = car.get("latitude")
                         lon = car.get("longitude")
                         dist = get_distance(lat, lon)
@@ -672,7 +685,7 @@ def main():
     seen_vins = load_seen_listings(state_path)
     new_seen_vins = set(seen_vins)
     
-    print("# Daily Car Market Bulletin (New Listings & Cheapest Deals)")
+    print("# Daily Car Market Bulletin (New Listings)")
     print(f"*Report generated for Yonkers, NY coordinates. Target distance comparisons sorted by proximity.*")
     
     first = True
@@ -685,7 +698,9 @@ def main():
         model = target["model"]
         trim = target["trim"]
         
-        print(f"\n## 🚙 {make} {model} ({trim})")
+        target_otd = target.get("target_otd_price")
+        otd_str = f" — target ${target_otd:,.0f}" if target_otd else ""
+        print(f"\n## 🚙 {make} {model} ({trim}){otd_str}")
         
         # Get listings
         listings = get_listings_for_trim(target, api_key, project_root)
@@ -704,68 +719,44 @@ def main():
                 new_arrivals.append(car)
                 new_seen_vins.add(vin)
                 
-        # Print New Arrivals (sorted by distance)
-        print("\n### 🆕 New Arrivals (Since Last Check)")
+        # Print New Arrivals — top 2 by proximity, phone-width format, URLs after table
+        print("\n### 🆕 New Arrivals (Top 2 Closest)")
         if new_arrivals:
             new_arrivals.sort(key=lambda x: x.get("computed_distance", float('inf')))
-            print(f"| {'Loc / Dist':<15} | {'Price (% off MSRP)':<20} | {'Delta':<8} | {'Color':<10} | {'Features (C/O)':<16} | {'Visor Link':<12} | {'Dealer Site':<12} |")
-            print(f"| {'-' * 15} | {'-' * 20} | {'-' * 8} | {'-' * 10} | {'-' * 16} | {'-' * 12} | {'-' * 12} |")
-            for car in new_arrivals:
+            top_new = new_arrivals[:2]
+            urls = []
+            print(f"| {'#':>2} | {'Dealer (mi)':<20} | {'Price':>8} | {'Δ':>6} | {'Color':<7} | {'C/O':>7} |")
+            print(f"| {'-' * 2} | {'-' * 20} | {'-' * 8} | {'-' * 6} | {'-' * 7} | {'-' * 7} |")
+            for car in top_new:
                 c_price = car.get("price")
                 c_dist = car.get("computed_distance", float('inf'))
                 c_state = car.get("state", "??")
-                c_loc_lbl = f"{c_state} — {c_dist:.0f} mi"
+                c_dealer = car.get("dealer_name") or "Dealer"
+                c_dealer_lbl = f"{c_dealer[:14]} {c_state} {c_dist:.0f}mi"
                 c_vin = car.get("vin", "")
+                c_vin_short = c_vin[-8:] if len(c_vin) >= 8 else c_vin
                 delta = c_price - cheapest_price
-                c_vdp = car.get("vdp_url") or car.get("vdpUrl") or "#"
+                c_vdp = car.get("vdp_url") or car.get("vdpUrl") or ""
                 c_color_raw = get_color_and_options(car, api_key)
                 c_color = abbreviate_color(c_color_raw)
-                c_msrp = get_msrp_info(car, api_key)
                 c_feats = get_features_summary(car, make, model, api_key)
-                if c_msrp and c_msrp > 0:
-                    discount = c_msrp - c_price
-                    pct_off = (discount / c_msrp) * 100
-                    if pct_off >= 0:
-                        price_lbl = f"${c_price:,.0f} (-{pct_off:.1f}%)"
-                    else:
-                        price_lbl = f"${c_price:,.0f} (+{abs(pct_off):.1f}%)"
-                else:
-                    price_lbl = f"${c_price:,.0f}"
-                visor_str = f"[Visor](https://visor.vin/search/listings/{c_vin})" if c_vin else "N/A"
-                link_str = f"[Dealer Site]({c_vdp})" if c_vdp != "#" else "N/A"
-                print(f"| {c_loc_lbl:<15} | {price_lbl:<20} | +${delta:,.0f} | {c_color:<10} | {c_feats:<16} | {visor_str} | {link_str} |")
+                # Compact C/O: "C:3/3 O:2/2" -> "3/3,2/2"
+                c_feats_compact = c_feats.replace("C: ","").replace(" | O: ",",")
+                urls.append((c_vin_short, c_vdp))
+                row_num = len(urls)
+                print(f"| {row_num:>2} | {c_dealer_lbl:<20} | ${c_price:,.0f} | ${delta:,.0f} | {c_color:<7} | {c_feats_compact:>7} |")
+            if urls:
+                print()
+                for i, (vid, url) in enumerate(urls, 1):
+                    print(f"{i}. {url or 'N/A'}")
         else:
             print("*No new listings appeared on the market since last check.*")
-            
-        # Print Cheapest Overall Deals (sorted by price)
-        print("\n### 🏆 Top 5 Cheapest Active Deals")
-        top_cheapest = listings[:5]
-        print(f"| {'Loc / Dist':<15} | {'Price (% off MSRP)':<20} | {'Delta':<8} | {'Color':<10} | {'Features (C/O)':<16} | {'Visor Link':<12} | {'Dealer Site':<12} |")
-        print(f"| {'-' * 15} | {'-' * 20} | {'-' * 8} | {'-' * 10} | {'-' * 16} | {'-' * 12} | {'-' * 12} |")
-        for car in top_cheapest:
-            c_price = car.get("price")
-            c_dist = car.get("computed_distance", float('inf'))
-            c_state = car.get("state", "??")
-            c_loc_lbl = f"{c_state} — {c_dist:.0f} mi"
-            c_vin = car.get("vin", "")
-            delta = c_price - cheapest_price
-            c_vdp = car.get("vdp_url") or car.get("vdpUrl") or "#"
-            c_color_raw = get_color_and_options(car, api_key)
-            c_color = abbreviate_color(c_color_raw)
-            c_msrp = get_msrp_info(car, api_key)
-            c_feats = get_features_summary(car, make, model, api_key)
-            if c_msrp and c_msrp > 0:
-                discount = c_msrp - c_price
-                pct_off = (discount / c_msrp) * 100
-                if pct_off >= 0:
-                    price_lbl = f"${c_price:,.0f} (-{pct_off:.1f}%)"
-                else:
-                    price_lbl = f"${c_price:,.0f} (+{abs(pct_off):.1f}%)"
-            else:
-                price_lbl = f"${c_price:,.0f}"
-            visor_str = f"[Visor](https://visor.vin/search/listings/{c_vin})" if c_vin else "N/A"
-            link_str = f"[Dealer Site]({c_vdp})" if c_vdp != "#" else "N/A"
-            print(f"| {c_loc_lbl:<15} | {price_lbl:<20} | +${delta:,.0f} | {c_color:<10} | {c_feats:<16} | {visor_str} | {link_str} |")
+
+        # Benchmark is useful even when every active listing has already been seen.
+        cheapest_dealer = listings[0].get("dealer_name") or "Dealer"
+        cheapest_state = listings[0].get("state", "??")
+        cheapest_dist = listings[0].get("computed_distance", float('inf'))
+        print(f"\n*Benchmark: cheapest active ${cheapest_price:,.0f} — {cheapest_dealer[:18]} {cheapest_state} {cheapest_dist:.0f}mi*")
         
     # Update global state of seen VINs
     save_seen_listings(new_seen_vins, state_path)

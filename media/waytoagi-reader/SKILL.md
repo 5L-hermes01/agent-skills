@@ -54,6 +54,10 @@ waytoagi update-log --emit-raw-blocks            # debugging: dump the full bloc
 
 - **Default (no flags)**: parses the "🎏 近 7 日更新日志" section of the main wiki page. ~7 days, grouped by day heading.
 - **`--archive`**: follows the "历史更新" mention link in the main doc to the archive (auto-discovered, not hardcoded). Renders all months / all days; each day item gets a `month` field. 500+ days indexed across the year+ archive.
+
+  **Archive coverage caveat**: Feishu's guest SSR only inlines nested block objects for a recent window of the archive doc (~the latest days). Older day headings reference child block ids that are absent from the payload entirely (client-side pagination), so those days render `items: []` and emit an accurate `[warn]` diagnostic — the content is not recoverable from the HTML, not a parser/encoding defect.
+
+  The CLI refuses to emit JSON and exits 5 (`UPSTREAM_CONTRACT_BROKEN`) if any day retained after `--date` filtering references absent child blocks, even when other items render. This applies to both main and archive reads and prevents pipeline publication of partial source data. Raw-block dumps remain available for diagnosis.
 - **`--flatten`**: collapses `days[]` into a single `items[]` list. Each item gains `day` and `day_heading_id` fields. Use this when piping into the sibling `translate` skill or any downstream consumer that wants a flat feed.
 
 Fallback if `waytoagi` is not on PATH: `python3 -m waytoagi_reader.cli update-log`.
@@ -87,11 +91,31 @@ Feishu sends `Cache-Control: no-store` and no `ETag`/`Last-Modified`, so conditi
 
 ## Translation
 
-Out of scope for this skill by design. Compose with the sibling `translate` skill (`media/translate/`):
+Out of scope for the reader itself, but a batch translator ships at `scripts/waytoagi_translate.py` — it reads `--flatten` JSON on stdin, batch-translates every Chinese `title`/`summary` through a local OpenAI-compatible server (default `qwen3.8` on `http://192.168.100.10:11434`), and emits the same document with `title_en`/`summary_en` siblings. Filesystem translation cache makes re-runs near-instant. Run these examples from the `media/waytoagi-reader` directory:
 
 ```bash
-waytoagi update-log | translate --target en
+waytoagi update-log --flatten | python3 scripts/waytoagi_translate.py --host http://192.168.100.10:11434 --model qwen3.8
+waytoagi update-log --flatten | python3 scripts/waytoagi_translate.py --latest-day   # first dated group in the newest-first source feed
 ```
+
+Env overrides: `WAYTOAGI_TRANSLATE_HOST`, `WAYTOAGI_TRANSLATE_MODEL`, `WAYTOAGI_TRANSLATE_CACHE` (default `$XDG_CACHE_HOME/waytoagi-translate`). `--no-cache` bypasses the cache. The sibling `translate` skill (`media/translate/`) also gained an `openai_compat` backend (set `TRANSLATE_BACKEND=openai_compat`, `TRANSLATE_OPENAI_HOST`, `TRANSLATE_OPENAI_MODEL`; `TRANSLATE_OPENAI_MAX_TOKENS` defaults to 16000). Empty and length-terminated responses fail rather than being cached. Missing numbered translations trigger retries and per-item fallback; unresolved fields cause a nonzero exit.
+
+### Full article content
+
+`scripts/waytoagi_content.py` fetches each linked article and translates its FULL body to English, preserving external (non-Feishu) hyperlinks as markdown `[label](url)`. Reads the translated `--flatten` JSON on stdin and adds `content_zh` / `content_en` to each item.
+
+```bash
+set -o pipefail
+waytoagi update-log --flatten | python3 scripts/waytoagi_translate.py | python3 scripts/waytoagi_content.py --host http://192.168.100.10:11434 --model qwen3.8
+```
+
+External link note: the reader's default render drops `link` attribs (external URLs). `waytoagi_content.py` re-decodes them into markdown before translation. Raw article text is cached by URL for seven days; English cache identity also includes source text, endpoint, model, prompt, and chunk budget (`WAYTOAGI_CONTENT_CACHE`, default `$XDG_CACHE_HOME/waytoagi-content`). Versioned caches ignore older potentially incomplete results. `--no-cache` bypasses all tiers, including fetched HTML.
+
+Translation endpoints must return nonblank message content and `finish_reason: "stop"`; absent completion status is rejected. Markdown links are kept together when chunking; a link larger than the entire budget produces an error requesting a larger budget instead of being split.
+
+`--batch-chars` controls the maximum source characters per request, including oversized individual blocks (default `WAYTOAGI_BATCH_CHARS` or 32000). This is a character budget, not a guarantee of fitting a model's context/output window. Empty or server-reported truncated responses are rejected after retries, never cached as complete; lower the budget if this happens. A model can still omit text or alter links without reporting truncation, so semantic fidelity needs review. Missing article blocks, empty bodies, and failed chunks cause nonzero exit status. `--limit` (default `WAYTOAGI_MAX_ARTICLES`, 0 = unlimited) caps attempted articles for partial dry runs.
+
+`python3 scripts/waytoagi_pipeline.py daily` (or `weekly`) runs the whole chain and writes `/tmp/wt_daily_full.json` (or `/tmp/wt_week_full.json`) only after required translated fields and URL-bearing article bodies are present. A limited/partial content result fails pipeline validation. Consumers must check its exit status before using the output; a failed run leaves any prior output unchanged. For archive diagnostics, `waytoagi update-log --archive --emit-raw-blocks` dumps the archive payload rather than the main document.
 
 ## Tests
 

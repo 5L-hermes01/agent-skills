@@ -25,4 +25,7 @@ def get_backend(name: str | None = None, *, model: str | None = None):
     if name == "ollama":
         from .ollama import OllamaBackend
         return OllamaBackend(model=model)
+    if name == "openai_compat":
+        from .openai_compat import OpenAICompatBackend
+        return OpenAICompatBackend(model=model)
     raise ValueError(f"unknown backend: {name}")
