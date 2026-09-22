@@ -1,7 +1,7 @@
 ---
 name: jargon
 description: Detect, decode, and track jargon terms across digest pipelines. Maintains a registry of domain-specific acronyms and terms with plainspeak translations at multiple sophistication levels.
-version: 1.1.0
+version: 1.3.0
 author: Hermes Agent
 license: MIT
 metadata:
@@ -94,6 +94,15 @@ Group multiple jargon notes on the same `**Jargon:**` line if many terms appear 
 - Periodically consolidate: if a term hasn't been seen in 90 days, flag for possible removal
 - First seen/last seen dates enable usage tracking over time
 
+### Baseline Saturated Terms
+
+These common baseline terms should be marked `"saturated": true` in the registry so they never appear in digest output. They recur in nearly every digest and re-explaining them adds noise for a regular reader:
+
+`RAG`, `VLM`, `CUA`, `TTS`, `SLM`, `LLM`, `SFT`, `NLP`, `ASR`, `OCR`
+
+When a digest run detects one of these and it is NOT yet marked saturated, add `"saturated": true` to its registry entry (Step 4) so the next run suppresses it. This list is the floor, not the ceiling — any term that recurs often enough to be baseline belongs here.
+
 ## Version History
 
+- 1.3.0 (2026-09-22): Added explicit Baseline Saturated Terms list (RAG, VLM, CUA, TTS, SLM, LLM, SFT, NLP, ASR, OCR) and a maintenance step to mark them saturated when detected. Prevents daily digests from re-explaining common baseline terms.
 - 1.2.0 (2026-06-14): Added saturation filter — terms marked `"saturated": true` are suppressed from digest output. Added per-digest deduplication to avoid re-explaining the same term across multiple papers in one run.
