@@ -86,6 +86,23 @@ def main(argv=None) -> int:
         return 1
     flat = r.stdout
 
+    if scope == "weekly":
+        # The 7-day section also carries section/nav links as day-less items
+        # (e.g. the 历史更新 archive mention). They are not part of the week's
+        # updates, and the archive body is enormous (17k+ zh chars), so they
+        # waste translation time and pollute the digest. Drop them.
+        try:
+            _doc = json.loads(flat)
+            _all = _doc.get("items", [])
+            _kept = [i for i in _all if i.get("day")]
+            _doc["items"] = _kept
+            flat = json.dumps(_doc, ensure_ascii=False)
+            print(f"[info] {scope}: dropped {len(_all) - len(_kept)} day-less (nav/archive) item(s)",
+                  file=sys.stderr)
+        except (ValueError, TypeError) as e:
+            print(f"[err] fetch output is not JSON: {e}", file=sys.stderr)
+            return 1
+
     # 2. translate titles/summaries
     tr = run([PY, f"{SCRIPTS}/waytoagi_translate.py",
               "--host", HOST, "--model", MODEL] + trans_extra,
