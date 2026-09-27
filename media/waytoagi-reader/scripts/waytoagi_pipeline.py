@@ -116,13 +116,25 @@ def main(argv=None) -> int:
         enriched = json.loads(fc.stdout)
         if len(enriched["items"]) != len(translated["items"]):
             raise ValueError("Content stage changed item count")
+        usable = 0
         for source, item in zip(translated["items"], enriched["items"]):
             if any(item.get(key) != value for key, value in source.items() if key not in ("content_zh", "content_en")):
                 raise ValueError("Content stage changed source item")
-            if source.get("url"):
-                for field in ("content_zh", "content_en"):
-                    if not isinstance(item.get(field), str) or not item[field].strip():
-                        raise ValueError(f"Missing {field}")
+            if not source.get("url"):
+                continue
+            if item.get("content_error"):
+                # Per-article fetch/render failure. The content stage degrades
+                # instead of dying; the item falls back to title_en/summary_en.
+                print(f"[warn] {scope}: no body for {source['url']}: {item['content_error']}", file=sys.stderr)
+                continue
+            for field in ("content_zh", "content_en"):
+                if not isinstance(item.get(field), str) or not item[field].strip():
+                    raise ValueError(f"Missing {field}")
+            usable += 1
+        if not usable and any(i.get("url") for i in enriched["items"]):
+            raise ValueError("No article produced content")
+        if usable:
+            print(f"[info] {scope}: {usable} article(s) with full translated bodies", file=sys.stderr)
     except (ValueError, KeyError, TypeError) as e:
         print(f"[err] incomplete article output: {e}", file=sys.stderr)
         return 1

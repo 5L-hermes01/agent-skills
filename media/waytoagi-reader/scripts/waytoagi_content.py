@@ -150,7 +150,11 @@ def render_page_body(blocks: dict) -> str:
 
     def walk(cid, depth=0):
         if cid not in blocks:
-            raise ValueError(f"Article child block {cid} absent from SSR payload")
+            # Feishu sometimes serves a TRUNCATED SSR payload (a referenced child
+            # block is simply absent). That must not kill the article — or, via
+            # the non-zero exit, the entire batch. Skip and keep the rest.
+            print(f"[warn] article child block {cid} absent from SSR payload — skipped", file=sys.stderr)
+            return
         if cid in seen:
             return
         seen.add(cid)
@@ -310,35 +314,53 @@ def main(argv=None) -> int:
         # Input siblings have no provenance; only our versioned cache is trusted.
         it.pop("content_en", None)
         it.pop("content_zh", None)
-        try:
-            zh = _cache_get(url, "zh") if not args.no_cache else None
-            if zh is None:
-                blocks = fetch_blocks(url, use_cache=not args.no_cache)
-                zh = render_page_body(blocks)
-                if not args.no_cache and zh:
-                    _cache_put(url, "zh", zh)
-            if not zh or not zh.strip():
-                raise ValueError("Article has no renderable body")
-            key = _translation_key(url, zh, args.host, args.model)
-            en = _cache_get(key, "en") if not args.no_cache else None
-            if en is None:
-                en = _translate_text(args.host, args.model, zh)
-                if not en or not en.strip():
-                    raise ValueError("Article has no translated body")
-                if not args.no_cache and en:
-                    _cache_put(key, "en", en)
-            if zh:
+        it.pop("content_error", None)
+        last_err = None
+        for attempt in (1, 2):
+            fresh = attempt == 2  # 2nd attempt refetches: SSR payloads are sometimes served truncated
+            try:
+                zh = None if (args.no_cache or fresh) else _cache_get(url, "zh")
+                if zh is None:
+                    blocks = fetch_blocks(url, use_cache=not (args.no_cache or fresh))
+                    zh = render_page_body(blocks)
+                    if not args.no_cache and zh:
+                        _cache_put(url, "zh", zh)
+                if not zh or not zh.strip():
+                    raise ValueError("Article has no renderable body")
+                key = _translation_key(url, zh, args.host, args.model)
+                en = _cache_get(key, "en") if not args.no_cache else None
+                if en is None:
+                    en = _translate_text(args.host, args.model, zh)
+                    if not en or not en.strip():
+                        raise ValueError("Article has no translated body")
+                    if not args.no_cache and en:
+                        _cache_put(key, "en", en)
                 it["content_zh"] = zh
-            if en:
                 it["content_en"] = en
-            print(f"[info] fetched+translated {url} ({len(zh or '')}zh chars -> {len(en or '')}en)", file=sys.stderr)
-        except Exception as e:
+                print(f"[info] fetched+translated {url} ({len(zh)}zh chars -> {len(en)}en)", file=sys.stderr)
+                last_err = None
+                break
+            except Exception as e:
+                last_err = e
+                if attempt == 1:
+                    print(f"[warn] content attempt 1 failed for {url}, refetching: {type(e).__name__}: {e}", file=sys.stderr)
+        if last_err is not None:
+            # Degrade, don't die: one bad article must not abort the whole digest.
+            # The item keeps title_en/summary_en, which the delivery job falls
+            # back to; content_error records why the body is missing.
             failed += 1
-            print(f"[warn] content failed for {url}: {type(e).__name__}: {e}", file=sys.stderr)
+            it["content_error"] = f"{type(last_err).__name__}: {last_err}"
+            print(f"[warn] content failed for {url}: {type(last_err).__name__}: {last_err}", file=sys.stderr)
 
     json.dump(doc, sys.stdout, ensure_ascii=False, indent=2)
     sys.stdout.write("\n")
-    return 1 if failed else 0
+    usable = sum(1 for it in items if it.get("content_en"))
+    if fetched and not usable:
+        print(f"[err] content: all {fetched} article(s) failed — nothing usable", file=sys.stderr)
+        return 1
+    if failed:
+        print(f"[warn] content: {failed}/{fetched} article(s) failed; continuing with {usable} usable", file=sys.stderr)
+    return 0
 
 
 if __name__ == "__main__":
