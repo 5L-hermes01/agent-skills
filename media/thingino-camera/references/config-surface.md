@@ -54,3 +54,16 @@ id, name, hostname, manufacturer(Thingino), model(<brand>_<model>_<soc>_<sensor>
 
 ## Runtime (`/api/v1/runtime/*`)
 motion{enabled,active}; streams/N{width,height,fps,bitrate,format,mode,rtsp_endpoint,rtsp_url,rtsp_listener_up,recording_active,healthy}; media{streams{ch0/ch1{available,enabled,snapshot_url(/x/dl0.jpg,/x/dl1.jpg)}}}.
+
+## Motors / PTZ (pan/tilt cams only — NOT in the agent API)
+
+Motor control is a parallel legacy CGI pair referenced only by `preview-motors.js`; it is absent from `/api/v1/config` and `/api/v1/capabilities` (which flips only `ptz.enabled`). Present only when `thinginoUIConfig.device.motors === true`.
+
+- `/x/json-motor-params.cgi` (GET) → `steps_pan`, `steps_tilt` (traverse range in steps), `accel_pan`, `accel_tilt`, `motion_driver` ("legacy"), `preview_control_mode` ("step"|"continuous"), `pos_0_x`, `pos_0_y` (home/origin coords). Seen on a Wuuk Y0510: steps_pan 4050, steps_tilt 1000.
+- `/x/json-motor.cgi` (GET, query args) → JSON `{code,result,message}`:
+  - `d=j` — read position/status (message.status/xpos/ypos/speed/invert).
+  - `d=g&x=&y=` — relative move (signed step offsets).
+  - `d=x&x=&y=` — absolute move within the step range.
+  - `d=r` — home/reset (recalibrate).
+
+Per-click step = `steps_pan/100` (x) and `steps_tilt/100` (y). No motor config lives under `/api/v1/config`; the fixed-camera and PTZ config payloads are byte-identical apart from `motion.motor_settle_ms`.
