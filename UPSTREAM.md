@@ -20,6 +20,7 @@ Everything else in this repo was created here and has never existed in the upstr
 - `github/nightly-upstream-sync/` — nightly upstream sync skill
 - `social-media/xurl-cli/` — xurl CLI skill
 - `media/youtube-transcript-download/` — YouTube transcript download skill
+- `media/thingino-camera/` — operate & configure a running Thingino IP camera via its agent API
 - `autonomous-ai-agents/hermes-agent/references/pre-upgrade-backup.md` — pre-upgrade backup methodology
 
 ## Merge rule

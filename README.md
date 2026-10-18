@@ -24,6 +24,7 @@ github/                # GitHub workflow skills
   nightly-upstream-sync/
 media/                 # Media skills
   youtube-transcript-download/
+  thingino-camera/     # operate & configure Thingino IP cameras (agent API)
 autonomous-ai-agents/  # Agent reference docs
   hermes-agent/references/
 .github/workflows/     # CI (smoke tests, auto-merge)
