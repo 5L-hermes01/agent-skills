@@ -14,6 +14,21 @@ metadata:
 
 Watches the jargon registry for new terms and posts kindergarten-level definitions to a designated Discord channel. Designed to run as a cron job — stateless between runs, with all tracking in a git-committed state file.
 
+## Run Mode (deterministic — converted 2026-10-18)
+
+The live cron job (`4a5569eca2b5`, every 4h) runs **no_agent** with
+`/opt/data/scripts/jargon_notify.py` — no LLM, no tool loop, no skill load.
+Behavior: registry+state+blocklist loaded from disk, set-difference, new terms
+posted via `hermes send` to Discord, state atomic-written to both mirrors.
+**Empty stdout = silent success** (scheduler suppresses delivery); non-zero
+exit = failure alert is delivered. `--dry-run` and `--self-test` flags exist;
+`JARGON_REGISTRY`/`JARGON_STATE`/`JARGON_BLOCKLIST` env vars redirect paths for
+tests. Do NOT reimplement this workflow with write_file scratch helpers —
+that caused 745+ runs of recurring "file edit FAILED" warnings (scratch
+overwrite refusals on a pre-existing helper) before the conversion. State JSONs
+are deliberately gitignored; /opt/data is the persistent mount — no git step.
+The agent workflow below is legacy fallback documentation only.
+
 ## Architecture
 
 ```

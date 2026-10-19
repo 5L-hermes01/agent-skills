@@ -16,7 +16,7 @@ Detects and translates domain-specific jargon (acronyms, technical terms, out-of
 
 ## The Jargon Registry
 
-The master dictionary lives at [references/jargon-registry.json](references/jargon-registry.json). Each entry has:
+The master dictionary is a **runtime store** at `/opt/data/references/jargon-registry.json` (persistent volume). It is deliberately **gitignored in this repo** (`**/jargon-registry.json`) — the repo carries schema and workflow only, never the data. Read it with `read_file(path='/opt/data/references/jargon-registry.json')` — **not** `skill_view`, which cannot see it (this mismatch made cron agents fail `skill_view(jargon)` + scratch-rewrite loops on every run before the 2026-10-18 hardening). Each entry has:
 
 | Field | Description |
 |-------|-------------|
@@ -43,7 +43,7 @@ The master dictionary lives at [references/jargon-registry.json](references/jarg
 
 ### Step 1: Load registry
 
-Read `references/jargon-registry.json` via skill_view(name='jargon', file_path='references/jargon-registry.json') to get known terms. The registry persists across sessions — always load the latest.
+Read `/opt/data/references/jargon-registry.json` via `read_file` (never `skill_view` — see Registry note above) to get known terms. The registry persists across sessions on the mounted volume — always load the latest. Optional blocklist: `/opt/data/references/jargon-blocklist.json` (same runtime-store convention; skip silently if absent).
 
 ### Step 2: Scan content for known jargon
 
