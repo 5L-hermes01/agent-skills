@@ -50,6 +50,14 @@ Format identically to the daily digest, but use a custom header:
 "Ad-Hoc arXiv Digest — [N] Papers". Group by theme, include citation counts,
 jargon notes, and a raw links section at the end.
 
+### Step 5: Update paper pile
+Append to `/opt/data/references/paper-pile.md` (running list for recall/mining/novelty clustering):
+- One table row: `# | added date | ID (no version) | version read | short title | cluster (C1-) | venue/status | one-line claim | primary numbers | link`
+- Never fabricate citation counts; when unavailable record as "unavailable (date)"
+- Update the pattern log (Novelty / pattern log section) when the clustering story changes
+- Verify with `grep` the row landed
+- Destroy no data: the pile file lives in `/opt/data/references/` (outside the skills tree, survives nightly rebuilds)
+
 ---
 
 ## Daily Digest Workflow with Dedup
