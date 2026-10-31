@@ -247,6 +247,11 @@ For Ad-Hoc Paper List and Daily Digest with Dedup workflows, see
 [`references/digest-workflows.md`](references/digest-workflows.md).
 These are deployment-specific and not part of the upstream skill.
 
+**Go-forward rule:** every ad-hoc paper analysis is archived to
+`/opt/data/references/paper-pile.md` (table row + cluster tally + pattern log,
+grep-verified) BEFORE the digest is sent to the user. The pile is the durable
+recall/mining/novelty-clustering record — a delivered-but-unarchived analysis is a bug.
+
 ## Complete Research Workflow
 
 ## Notes

@@ -50,13 +50,19 @@ Format identically to the daily digest, but use a custom header:
 "Ad-Hoc arXiv Digest — [N] Papers". Group by theme, include citation counts,
 jargon notes, and a raw links section at the end.
 
-### Step 5: Update paper pile
+### Step 5: Archive the analysis to paper pile — BEFORE sending
+The digest is NOT delivered until the pile is written and verified.
 Append to `/opt/data/references/paper-pile.md` (running list for recall/mining/novelty clustering):
 - One table row: `# | added date | ID (no version) | version read | short title | cluster (C1-) | venue/status | one-line claim | primary numbers | link`
 - Never fabricate citation counts; when unavailable record as "unavailable (date)"
 - Update the pattern log (Novelty / pattern log section) when the clustering story changes
-- Verify with `grep` the row landed
+- Verify with `grep` the row landed BEFORE composing the delivery message
+- If the pile write fails, report the failure in the message instead of pretending it archived
 - Destroy no data: the pile file lives in `/opt/data/references/` (outside the skills tree, survives nightly rebuilds)
+
+Order of operations is firm: fetch → metadata → citations → jargon/registry → format → **pile
+archive + grep-verify** → deliver to user. A digest sent without its row in the pile is a
+delivered-but-lost analysis; treat that as a bug worth a follow-up append.
 
 ---
 
