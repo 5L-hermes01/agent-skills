@@ -1,13 +1,14 @@
 ---
 name: jargon
-description: Detect, decode, and track jargon terms across digest pipelines. Maintains a registry of domain-specific acronyms and terms with plainspeak translations at multiple sophistication levels.
-version: 1.1.0
-author: Hermes Agent
+description: Detect, decode, and track domain-specific jargon across digest pipelines
+version: 1.2.1
+author: Hermes@5L-Labs.com (NJL)
 license: MIT
+platforms: [linux, macos]
 metadata:
   hermes:
     tags: [jargon, terminology, plainspeak, digest, acronyms]
-    related_skills: [unified-digest-themes, x-digest, arxiv]
+    related_skills: [arxiv]
 ---
 
 # Jargon Detection & Decoding
