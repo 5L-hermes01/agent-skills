@@ -24,6 +24,7 @@ venv/
 **/benchmark_price.json
 **/shown_papers.json
 **/posted-terms.json
+**/seen_headlines.json
 **/jargon-registry.json
 **/jargon-blocklist.json
 **/target_profiles.json
