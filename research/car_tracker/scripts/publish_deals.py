@@ -375,7 +375,11 @@ def car_matches_profile(car, make, model, trim, vin_prefix, req_keywords, requir
             
     return True
 
+# Track whether the API auth failed (401/402/403) so we can surface it
+_visor_auth_failed = False
+
 def get_listings_for_trim(target, api_key, project_root):
+    global _visor_auth_failed
     make = target["make"]
     model = target["model"]
     trim = target["trim"]
@@ -399,6 +403,10 @@ def get_listings_for_trim(target, api_key, project_root):
                     listings.extend(data)
                     offset += limit
                     time.sleep(1.0) # sleep 1.0s between pages to stay under rate limits
+                elif r.status_code in (401, 402, 403):
+                    print(f"[-] ERROR: Visor API authentication failed (HTTP {r.status_code}). Check VISOR_API_KEY / VISOR.VIN_API_KEY.", file=sys.stderr)
+                    _visor_auth_failed = True
+                    break
                 else:
                     print(f"[-] Warning: Visor API request failed with status code {r.status_code}", file=sys.stderr)
                     break
@@ -656,10 +664,13 @@ def main():
     print(f"*Report generated for Yonkers, NY coordinates. Target distance comparisons sorted by proximity.*")
     
     first = True
+    trim_count = 0
+    empty_count = 0
     for target in monitored_trims:
         if not first:
             time.sleep(2.0)
         first = False
+        trim_count += 1
         
         make = target["make"]
         model = target["model"]
@@ -674,6 +685,7 @@ def main():
         
         if not listings:
             print("*No active new inventory matching specifications found.*")
+            empty_count += 1
             continue
             
         cheapest_price = listings[0]["price"]
@@ -724,6 +736,13 @@ def main():
             print(f"\n*Benchmark: cheapest active ${cheapest_price:,.0f} — {cheapest_dealer[:18]} {cheapest_state} {cheapest_dist:.0f}mi*")
         else:
             print("*No new listings appeared on the market since last check.*")
+        
+    # If every trim returned empty and the API auth failed, fail loudly
+    if empty_count == trim_count and _visor_auth_failed:
+        print("\n[-] FATAL: Visor API authentication failed (HTTP 401/402/403).", file=sys.stderr)
+        print("[-] The daily car bulletin cannot generate listings without a valid API key.", file=sys.stderr)
+        print("[-] Add VISOR_VIN_API_KEY=<your-key> to /opt/data/secrets/car-tracker.env", file=sys.stderr)
+        sys.exit(1)
         
     # Update global state of seen VINs
     save_seen_listings(new_seen_vins, state_path)
