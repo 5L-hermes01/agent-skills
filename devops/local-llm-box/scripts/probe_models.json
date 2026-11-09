@@ -1,0 +1,8 @@
+{
+  "host": "192.168.100.10:11434",
+  "models": [
+    "qwen3.8-27b-instruct-mtp-d3",
+    "qwen3.8-27b-instruct"
+  ],
+  "note": "Default probe list = explicit, verified-fast model ids only. The old family and broken aliases (qwen3.5-35b-a3b, qwen3.8) are intentionally excluded - pass them as CLI args to probe_models.py to demonstrate alias hangs without taxing every default run. Edit this file to change what the probe checks; do not edit probe_models.py."
+}
