@@ -1,7 +1,8 @@
 # Validation Spec: hn-brief-dataset + HN Brief daily/weekly/monthly delivery
 # Last updated: 2026-11-27
-# Change: consume the two additive dataset fields — `topComments` (2026-11-25)
-#         and `articleSource` (2026-11-26) — and keep the phone version sane.
+# Change: render the per-story ARTICLE summary (`summary`) that the briefing had
+#         been dropping — it shipped links + thread notes only; plus topComments
+#         (2026-11-25) and articleSource (2026-11-26) handling.
 
 ## Positive Checks (MUST be present)
 
@@ -24,9 +25,11 @@
 - [ ] Weekly/monthly corpus header carries `save_to:` and the job writes its digest there (`/opt/data/cache/hn-brief/{weekly,monthly}/…`)
 - [ ] The corpus carries a per-story `article:` and `hn:` URL, and every `Link:`/`Discussion:` line in the digest is one of those, copied verbatim
 - [ ] Delivery confirmed by READING THE CHANNEL BACK — the message in the channel is the digest itself (a `last_status=ok` / `delivered` run can still have posted an error string)
+- [ ] Every story block shows `Summary:` — the article summary — between the links and `Discussion:`; a story with a `summary` in the JSON but no `Summary:` line is a FAIL
+- [ ] Rendered summary text is a clipped prefix of the dataset `summary` field, never rewritten, merged with the discussion, or invented
 - [ ] Every story with `topComments` renders up to `--comments` verbatim comments as `• author · score: text` + the comment permalink; text is clipped, never paraphrased or invented
 - [ ] A story whose `articleSource` is not `fetched` carries the provenance marker on its article line (`[article fetch failed …]`, `[no article …]`, `[PDF not parsed …]`)
-- [ ] Signal keeps its own comment budget (`--signal-comments 1`, 140 chars): a 20-story day lands around 11 messages, not 16+
+- [ ] Signal keeps its own tighter budget (`--signal-summary-chars 240`, `--signal-discussion-chars 200`, `--signal-comments 1` at 120 chars): a 20-story day lands around 13 messages, not 16+
 - [ ] Weekly/monthly corpus tags non-fetched stories `(src: … — article not read)` and the header explains the tag
 
 ## Negative Checks (MUST NOT be present)
