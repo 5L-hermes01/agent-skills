@@ -17,11 +17,13 @@ State: /opt/data/state/hn-brief-email.last-sent.json
        /opt/data/state/hn-brief-signal.last-sent.json
 Log:   /opt/data/logs/hn-brief-email.log
 
-Each story carries its own comment context: `discussion_summary` (the model's
-summary of the HN discussion) and, when the pipeline publishes it, `topComments`
-— up to 10 verbatim comments, best first, as {id, author, text, score, depth,
-url}. Both are rendered under the story, never invented: a day whose JSON has no
-`topComments` simply shows the discussion summary.
+Each story renders in rank order: title + points/comments, the article URL, the
+HN discussion URL, `summary` (the model's summary OF THE ARTICLE — the part that
+makes the briefing readable without opening anything), `discussion_summary` (the
+model's summary of the HN thread), and, when the pipeline publishes it,
+`topComments` — up to 10 verbatim comments, best first, as {id, author, text,
+score, depth, url}. Nothing is invented: a day whose JSON has no `summary` or
+`topComments` simply shows the fields it does have.
 
 Delivery is SILENT on success/skip (the cron job runs with deliver: local) — the
 script posts to Discord and Signal itself so nothing needs forwarding. A real
@@ -94,15 +96,17 @@ DISCORD_SAFE_LIMIT = 1900  # Discord hard-caps a message at 2000 chars
 DEFAULT_SIGNAL_TARGET = "signal:Daily Notices"
 SIGNAL_SAFE_LIMIT = 1600  # below Signal's per-message ceiling, and short enough
 #                           that one story block rarely straddles two messages
-DEFAULT_DISCUSSION_CHARS = 450   # per-story discussion summary, email + Discord
-DEFAULT_SIGNAL_DISCUSSION_CHARS = 300
+DEFAULT_SUMMARY_CHARS = 360       # per-story ARTICLE summary ("Summary:"), email + Discord
+DEFAULT_SIGNAL_SUMMARY_CHARS = 240
+DEFAULT_DISCUSSION_CHARS = 320    # per-story discussion summary, email + Discord
+DEFAULT_SIGNAL_DISCUSSION_CHARS = 200
 DEFAULT_SIGNAL_DIGEST_CHARS = 1200  # digest head only, with a pointer
 DEFAULT_COMMENTS = 2             # verbatim top comments per story (0 = none)
-DEFAULT_COMMENT_CHARS = 200
+DEFAULT_COMMENT_CHARS = 180
 # A notices group is not an archive: one short comment per story is colour,
 # two full ones made a 16-message flood the day topComments went live.
 DEFAULT_SIGNAL_COMMENTS = 1
-DEFAULT_SIGNAL_COMMENT_CHARS = 140
+DEFAULT_SIGNAL_COMMENT_CHARS = 120
 # `articleSource` (new 2026-11-26) says how the pipeline got the article before
 # summarizing it. Anything but "fetched" means the summary leans on metadata,
 # the HN post itself, or an unparsed PDF — say so instead of implying we read it.
@@ -204,10 +208,14 @@ def _clip(text: str, limit: int) -> str:
     return cut.rstrip(" ,;:—-") + "…"
 
 
-def story_block(i: int, s: dict, *, discussion_chars: int, comments: int,
-                comment_chars: int) -> list[str]:
-    """One ranked story: title, both links, its discussion summary, top comments.
+def story_block(i: int, s: dict, *, summary_chars: int, discussion_chars: int,
+                comments: int, comment_chars: int) -> list[str]:
+    """One ranked story: title, both links, the article summary, the discussion
+    summary, and the top comments.
 
+    `summary` is the model's summary OF THE ARTICLE — the reason the briefing is
+    readable without opening anything; it was missing from the render until
+    2026-11-27, which left the briefing as a link list plus quarantine notes.
     `topComments` is whatever the pipeline published — {id, author, text, score,
     depth, url} per PR #4. Absent field means the day simply has no verbatim
     comments; nothing is synthesised to fill the gap.
@@ -217,6 +225,9 @@ def story_block(i: int, s: dict, *, discussion_chars: int, comments: int,
         f"   Article: {s['url']}" + (f"  [{note}]" if (note := provenance_note(s)) else ""),
         f"   Hacker News: {hn_url(s)}",
     ]
+    summary = _clip(s.get("summary") or "", summary_chars) if summary_chars else ""
+    if summary:
+        out.append(f"   Summary: {summary}")
     discussion = _clip(s.get("discussion_summary") or "", discussion_chars) if discussion_chars else ""
     if discussion:
         out.append(f"   Discussion: {discussion}")
@@ -234,9 +245,9 @@ def story_block(i: int, s: dict, *, discussion_chars: int, comments: int,
     return out
 
 
-def build_plain(day: dict, *, discussion_chars: int = 0, comments: int = 0,
-                comment_chars: int = DEFAULT_COMMENT_CHARS, digest_chars: int = 0,
-                digest_note: str = "") -> str:
+def build_plain(day: dict, *, summary_chars: int = 0, discussion_chars: int = 0,
+                comments: int = 0, comment_chars: int = DEFAULT_COMMENT_CHARS,
+                digest_chars: int = 0, digest_note: str = "") -> str:
     """The briefing as plain text.
 
     Defaults reproduce the pre-comment briefing exactly; the daily run passes the
@@ -252,7 +263,7 @@ def build_plain(day: dict, *, discussion_chars: int = 0, comments: int = 0,
         "",
     ]
     for i, s in enumerate(stories, 1):
-        out += story_block(i, s, discussion_chars=discussion_chars,
+        out += story_block(i, s, summary_chars=summary_chars, discussion_chars=discussion_chars,
                            comments=comments, comment_chars=comment_chars)
     digest = (day.get("digest") or "(digest missing)").strip()
     if digest_chars:
@@ -267,8 +278,8 @@ def _linkify(text: str) -> str:
                   r'<a href="\1">\1</a>', escaped)
 
 
-def build_html(day: dict, *, discussion_chars: int = 0, comments: int = 0,
-               comment_chars: int = DEFAULT_COMMENT_CHARS) -> str:
+def build_html(day: dict, *, summary_chars: int = 0, discussion_chars: int = 0,
+               comments: int = 0, comment_chars: int = DEFAULT_COMMENT_CHARS) -> str:
     stories = day["stories"][:MAX_HEADLINES]
     rows = []
     for s in stories:
@@ -284,6 +295,9 @@ def build_html(day: dict, *, discussion_chars: int = 0, comments: int = 0,
                       if provenance_note(s) else ""),
             )
         ]
+        summary = _clip(s.get("summary") or "", summary_chars) if summary_chars else ""
+        if summary:
+            block.append(f'<div style="margin:3px 0">{html_mod.escape(summary)}</div>')
         discussion = _clip(s.get("discussion_summary") or "", discussion_chars) if discussion_chars else ""
         if discussion:
             block.append(f'<div style="color:#333;margin:3px 0">{html_mod.escape(discussion)}</div>')
@@ -489,6 +503,9 @@ def main() -> int:
                     help="Discord channel id for the Daily Channel")
     ap.add_argument("--signal-target", default=os.environ.get("HN_BRIEF_SIGNAL_TARGET", DEFAULT_SIGNAL_TARGET),
                     help="Signal target for the briefing (name or group id)")
+    ap.add_argument("--summary-chars", type=int,
+                    default=int(os.environ.get("HN_BRIEF_SUMMARY_CHARS", DEFAULT_SUMMARY_CHARS)),
+                    help="per-story ARTICLE summary clip, email + Discord (0 = omit)")
     ap.add_argument("--discussion-chars", type=int,
                     default=int(os.environ.get("HN_BRIEF_DISCUSSION_CHARS", DEFAULT_DISCUSSION_CHARS)),
                     help="per-story discussion summary clip, email + Discord (0 = omit)")
@@ -497,6 +514,9 @@ def main() -> int:
     ap.add_argument("--comment-chars", type=int,
                     default=int(os.environ.get("HN_BRIEF_COMMENT_CHARS", DEFAULT_COMMENT_CHARS)),
                     help="clip per verbatim comment")
+    ap.add_argument("--signal-summary-chars", type=int,
+                    default=int(os.environ.get("HN_BRIEF_SIGNAL_SUMMARY_CHARS", DEFAULT_SIGNAL_SUMMARY_CHARS)),
+                    help="per-story article summary clip for Signal")
     ap.add_argument("--signal-discussion-chars", type=int,
                     default=int(os.environ.get("HN_BRIEF_SIGNAL_DISCUSSION_CHARS", DEFAULT_SIGNAL_DISCUSSION_CHARS)),
                     help="per-story discussion clip for Signal")
@@ -534,10 +554,12 @@ def main() -> int:
         log(f"skip: digestValid=false for {date}")
         return 0
 
-    plain = build_plain(day, discussion_chars=args.discussion_chars, comments=args.comments,
+    plain = build_plain(day, summary_chars=args.summary_chars,
+                        discussion_chars=args.discussion_chars, comments=args.comments,
                         comment_chars=args.comment_chars)
     signal_text = build_plain(
         day,
+        summary_chars=args.signal_summary_chars,
         discussion_chars=args.signal_discussion_chars,
         comments=args.signal_comments,
         comment_chars=args.signal_comment_chars,
@@ -545,7 +567,8 @@ def main() -> int:
         digest_note=("\n\n(full digest in the HN Brief email and the Discord "
                      "#hacker-news channel)"),
     )
-    html_body = build_html(day, discussion_chars=args.discussion_chars,
+    html_body = build_html(day, summary_chars=args.summary_chars,
+                           discussion_chars=args.discussion_chars,
                            comments=args.comments, comment_chars=args.comment_chars)
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     (CACHE_DIR / f"{date}.txt").write_text(f"To: {args.to}\nSubject: {subject}\n\n{plain}", encoding="utf-8")

@@ -16,10 +16,10 @@ aggregator jobs, which summarize with the local model.
 | Piece | Value |
 |---|---|
 | Targets | `email,discord,signal` (default; override with `--targets`, `HN_BRIEF_TARGETS`) |
-| Per-story blocks | every story renders with its `discussion_summary` and, when the day publishes them, up to 2 verbatim `topComments` (`• author · score: text  <comment url>` — 200-char clip; `score` is a ranking score, never print it as "points"). A story whose `articleSource` is not `fetched` gets a bracketed provenance note on its article line (`[article fetch failed — summary is from the link, not the page]`, `[no article — summary is the HN post itself]`, `[PDF not parsed — summary is from the link, not the paper]`) |
-| Email | `HN Brief — <date>`; header → 20 stories (points, comments, article URL, HN link, discussion clip, top comments) → `DIGEST` → full digest; multipart plain + HTML |
+| Per-story blocks | every story renders in order: both links, `Summary:` (the model's summary of the **article**, 360 chars), `Discussion:` (the thread summary, 320), then up to 2 verbatim `topComments` (`• author · score: text  <comment url>` — 180-char clip; `score` is a ranking score, never print it as "points"). A story whose `articleSource` is not `fetched` gets a bracketed provenance note on its article line (`[article fetch failed — summary is from the link, not the page]`, `[no article — summary is the HN post itself]`, `[PDF not parsed — summary is from the link, not the paper]`) |
+| Email | `HN Brief — <date>`; header → 20 stories (points, comments, article URL, HN link, **article summary**, discussion clip, top comments) → `DIGEST` → full digest; multipart plain + HTML |
 | Discord | the same full briefing, chunked to Discord's 2000-char cap (one message per chunk, `(i/n)` suffix) |
-| Signal | a **phone-sized render of the same day**, chunked at 1600 chars (`[i/n]` prefix): shorter discussion clips (300 vs 450 chars) and a 1200-char digest head plus a pointer to the full essay. Sent with `hermes send -t signal:Daily Notices` — no token of its own, the group name resolves through the gateway's Signal config |
+| Signal | a **phone-sized render of the same day**, chunked at 1600 chars (`[i/n]` prefix): the article summary at 240 chars, discussion clips at 200 (vs 320) and a 1200-char digest head plus a pointer to the full essay. Sent with `hermes send -t signal:Daily Notices` — no token of its own, the group name resolves through the gateway's Signal config |
 | Cron | three runs, `timezone: America/New_York` — 07:45 (main), 08:15 and 09:15 (retries); `deliver: local` (the script posts Discord and Signal itself) |
 | Entry point | `HERMES_HOME/scripts/hn-brief-email.py` (real-file shim) → this skill's script |
 | State | `/opt/data/state/hn-brief-email.last-sent.json`, `hn-brief-discord.last-sent.json`, `hn-brief-signal.last-sent.json` — one per target, so a failure on one never suppresses the others |
@@ -27,12 +27,13 @@ aggregator jobs, which summarize with the local model.
 | Cache | `/opt/data/cache/hn-brief-email/<date>.txt`, `.html`, `.signal.txt` |
 | Exit | 0 on success/skip (silent); 2 on a real transport failure so `hermes cron list` shows `last_status=error` |
 
-The briefing is input-dominated by the discussion text: with `topComments` live
-the full render is ~35 KB (22 Discord messages) and the Signal render ~16 KB
-(11 messages). Signal keeps its own tighter comment budget (`--signal-comments 1`,
-140 chars) because the first day comments shipped it posted 16 messages; email and
-Discord stay at 2 comments × 200 chars. `--dry-run` prints both chunk counts
-before anything is sent.
+The briefing is input-dominated by the discussion text: with `topComments` and the
+article summary live the full render is ~43 KB (27 Discord messages) and the
+Signal render ~19 KB (13 messages). Signal keeps its own tighter budget
+(`--signal-summary-chars 240`, `--signal-discussion-chars 200`,
+`--signal-comments 1` at 120 chars) because the first day comments shipped it
+posted 16 messages; email and Discord stay at 360/320/2×180. `--dry-run` prints
+both chunk counts before anything is sent.
 
 Skip rules (silent, exit 0): briefing date != today in America/New_York (the
 07:45 run exits quietly when the pipeline is late and the 08:15/09:15 runs pick

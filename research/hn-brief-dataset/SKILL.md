@@ -80,9 +80,12 @@ the digest alone is ~19 KB, easy to truncate or mis-parse by hand.
 `scripts/hn-brief-email.py` — the DAILY delivery: deterministic, no LLM. Sends
 the day's briefing to email, posts it to the Discord Daily Channel, and posts a
 phone-sized version to Signal `Daily Notices` — each target with its own
-already-sent record. Every story renders with its discussion summary and, when
-present, up to `--comments` verbatim top comments (author, ranking score,
-comment link). Stories whose `articleSource` is not `fetched` carry a short
+already-sent record. Every story renders, in order: both links, `summary` (the
+article), `discussion_summary` (the thread), then up to `--comments` verbatim top
+comments (author, ranking score, comment link). The article summary line is not
+optional garnish — without it the briefing is a link list, so it defaults on for
+every target (`--summary-chars`, Signal `--signal-summary-chars`).
+Stories whose `articleSource` is not `fetched` carry a short
 `[article fetch failed …]` marker so the summary is never passed off as the
 article. The briefing got materially longer when `topComments` went live
 (2026-11-25: 30 Discord messages / 16 Signal messages in one day), so Signal has
