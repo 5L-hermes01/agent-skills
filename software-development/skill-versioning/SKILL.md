@@ -83,6 +83,63 @@ git sparse-checkout set skills/
 This clones only the `skills/` directory — no docs, tests, plugins, or tools.
 Saves bandwidth, disk, and clone time.
 
+## Landing a change now (not at 03:00)
+
+The nightly rebuild is the only sync, so an edit that must be live this session —
+a cron job fires in a few hours — has to be installed by hand and proven. The
+consumption copy is disposable; the repo is truth.
+
+1. Edit in the repo (`/opt/data/repos/agent-skills/<category>/<skill>/`).
+2. Branch off `main`, commit, push, open a PR to `5L-hermes01/agent-skills`, and
+   squash-merge it. Only `origin/main` survives the nightly `reset --hard`; a
+   side branch or a working-tree file is deleted along with the skill.
+3. Install with a **trailing dot**: `cp -a research/<skill>/. /opt/data/skills/research/<skill>/`.
+   `cp -a src dest` when `dest` already exists nests `src` one level deeper, and
+   `skills/research/<skill>/<skill>/` then loads as a second skill of the same name.
+4. Prove it: `diff -r <repo skill dir> /opt/data/skills/<path>/<skill>` is silent,
+   and `grep '^version:'` on the **skills** copy shows the new version.
+
+Replacing a whole skill dir: remove it in one call, copy in the next (or do both
+from Python `shutil`). A `rm -rf … && cp -a …` one-liner can stall on approval and
+never execute, leaving you reasoning about a state that does not exist.
+
+### Refreshing an upstream PR that went stale
+
+An open PR is a snapshot of its head branch — it does not move when the fork's
+`main` moves, so "we have a PR" can mean a PR still carrying a file from weeks
+ago. Check the PR itself (`gh pr view <n> --json state,updatedAt,mergeable,files`):
+additions that have not changed since the last push mean stale.
+
+To refresh a healthy PR, push new commits onto its head branch instead of opening
+a rival PR:
+
+```bash
+git ls-remote --heads origin <pr-branch>            # branch must exist on the fork
+git worktree add /tmp/wt-pr-<n> -B <pr-branch> origin/<pr-branch>
+cp -a <repo>/<skill>/. /tmp/wt-pr-<n>/<skill>/      # trailing dot again
+git -C /tmp/wt-pr-<n> commit -am "<msg>"
+git -C /tmp/wt-pr-<n> push origin <pr-branch>
+git diff --stat origin/<pr-branch> main -- <skill>  # empty = PR head matches your main
+```
+
+A worktree keeps the main checkout (and the nightly script's assumptions about it)
+untouched. Read the PR back afterwards — state, updatedAt, additions, files —
+a push without that read-back is not evidence.
+
+Before pushing into a PR branch, run `git diff --stat upstream/main origin/<pr-branch>`
+to see everything the PR actually carries. Unrelated files (registry edits, older
+drafts) become yours to defend at review, and unrelated commits from a fork whose
+`main` is ahead leak into the diff — branch from `upstream/main` when opening new
+work, never from the fork's `main`.
+
+### Your copy shadows upstream forever
+
+The rebuild overlays repo files on top of upstream, so a file you once forked keeps
+winning after upstream rewrites it: the local copy freezes at the version you last
+saved and silently undoes upstream's changes. Periodically check
+`git diff --stat upstream/main main -- <path>`; if history is the only reason the
+file differs, adopt upstream's version instead of maintaining two.
+
 ## Key Design Decisions
 
 ### Separate repo from consumption directory
@@ -153,5 +210,6 @@ git -C /opt/data/repos/agent-skills config user.email "hermes1@5l-labs.com"
 - **Only `/opt/data/skills/` is rebuilt**, NOT `/opt/data/scripts/`. Scripts live outside the skills tree and are NOT in any repo. They exist only on local disk and must be backed up separately
 - **Missing skill updates**: If PRs back up (10+ open), the auto-merge workflow is likely broken. See `github-auto-merge-workflow` skill's Known Failure Modes section
 - **An untracked skill is deleted at the next rebuild**: the rebuild clears `/opt/data/skills/` and overlays only upstream + tracked repo files. A skill that lives only in the repo *working tree* (or on an unmerged `update/local-<date>` branch) disappears from disk the night after the sync commits it, taking its cron entry points with it. After creating or editing a skill, run `git -C /opt/data/repos/agent-skills ls-files | grep <skill-name>`; if it is empty, the skill is living on borrowed time. Fix: merge the `update/local-<date>` PR (or push the files to a feature branch and merge it) so `origin/main` carries them before 03:00 UTC.
+- **5L-Labs is a mirror, not a source.** The rebuild's upstream is **NousResearch/hermes-agent**, then this fork's working tree — it never reads 5L-Labs/agent-skills. Merging a skill in 5L-Labs is durability for reviewers, not distribution to this host: if you also delete the fork's copy, the next rebuild removes the skill from `/opt/data/skills/` even though the 5L-Labs PR is merged. Check `grep -nE 'UPSTREAM_REPO|SKILLS_REPO' /opt/data/scripts/nightly-repo-sync.py` before untracking anything, and prove it by rebuilding into a scratch dir (copy `$UPSTREAM_SKILLS`, then overlay the repo) rather than assuming.
 - **rsync is not installed** — the script uses `shutil.copytree` with `dirs_exist_ok=True` instead. If you install rsync, update the rebuild function to use `rsync -a --delete` for cleaner syncs
 - **Upstream sparse clone** only has `skills/` directory checked out. If the nightly script needs files from outside `skills/`, update the sparse-checkout pattern
