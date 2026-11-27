@@ -121,6 +121,14 @@ Notes that cost time if forgotten:
   prompts restate this as a hard rule — the model follows the prompt, not this
   document.
 
+## Recovery
+
+`references/job-definitions.json` is a snapshot of the five `hn-brief-*` cron jobs
+(ids, schedules, timezone, deliver targets, model/provider, toolsets, and the two
+aggregator prompts verbatim). Runtime truth is `HERMES_HOME/cron/jobs.json`; if
+that store is lost, recreate the jobs from this snapshot rather than from memory.
+It holds no tokens or phone numbers.
+
 ## Verifying without waiting
 
 ```bash
